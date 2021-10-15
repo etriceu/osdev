@@ -59,39 +59,65 @@ void clear()
 		videoMemory[n] = (textStyle | 0x0000)<<8;
 	
 	textPosition = 0;
+	moveCursor(0);
+}
+
+void _print()
+{
+	int size = textWidth*textHeight;
+	if(textPosition >= size)
+	{
+		int n = 0;
+		for(; n < size-textWidth; n++)
+			videoMemory[n] = videoMemory[n+textWidth];
+		
+		for(; n < size; n++)
+			videoMemory[n] = (textStyle | 0x0000)<<8;
+		
+		textPosition -= textWidth;
+	}
+	
+	if(cursor)
+		moveCursor(textPosition);
 }
 
 void print(const char *str)
 {
 	for(; *str != '\0'; str++, textPosition++)
+	{
+		_print();
 		if(*str == '\n')
 			textPosition = (textPosition/textWidth+1)*textWidth-1;
 		else
 			videoMemory[textPosition] = (textStyle | 0x0000)<<8 | *str;
-	
-	moveCursor(textPosition);
+	}
+	_print();
 }
 
 void printn(const char *str, size_t size)
 {
 	for(int end = textPosition+size; textPosition < end; str++, textPosition++)
+	{
+		_print();
 		if(*str == '\n')
 			textPosition = (textPosition/textWidth+1)*textWidth-1;
 		else
 			videoMemory[textPosition] = (textStyle | 0x0000)<<8 | *str;
-		
-	moveCursor(textPosition);
+	}
+	_print();
 }
 
 void printraw(const uint16_t *str, size_t size)
 {
 	for(int end = textPosition+size; textPosition < end; str++, textPosition++)
+	{
+		_print();
 		if((*str & 0x00ff) == '\n')
 			textPosition = (textPosition/textWidth+1)*textWidth-1;
 		else
 			videoMemory[textPosition] = *str;
-		
-	moveCursor(textPosition);
+	}
+	_print();
 }
 
 void setchar(int pos, char c, uint8_t s)
