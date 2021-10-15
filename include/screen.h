@@ -1,8 +1,7 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include "functions.h"
 
 #define FG_BLACK			0x00
 #define FG_BLUE				0x01
