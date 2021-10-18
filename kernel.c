@@ -1,5 +1,6 @@
 #include "include/keyboard.h"
 #include "include/system.h"
+#include "include/ata.h"
 
 extern void kernelMain(void* multiboot_structure, unsigned int magicnumber)
 {
@@ -10,6 +11,25 @@ extern void kernelMain(void* multiboot_structure, unsigned int magicnumber)
 	const int cmdSize = 16;
 	char cmd[cmdSize];
 	int cmdi = 0;
+	
+	
+	uint8_t tab[512];
+	
+	const char* text = "test123";
+	
+	for(int n = 0; text[n] != '\0'; n++)
+		tab[n] = text[n];
+	
+	ataWrite(0, 1, tab);
+	
+	for(int n = 0; n < 512; n++)
+		tab[n] = 0;
+	
+
+	ataRead(0, 1, tab);
+	print(tab);
+	
+	
 	while(1)
 	{
 		if(isKeyEvent())
