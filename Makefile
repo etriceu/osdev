@@ -2,26 +2,36 @@ GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore
 ASMARG = --32
 LDARG = -melf_i386
 
-objects = loader.o kernel.o screen.o keyboard.o system.o ata.o
+objects = src/loader.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/system.o src/drivers/ata.o
 %.o: %.c
 	gcc $(GCCARG) -o $@ -c $<
 
 %.o: %.s
 	as $(ASMARG) -o $@ $<
 	
-kernel.bin: linker.ld $(objects)
+kernel.bin: src/linker.ld $(objects)
 	ld $(LDARG) -T $< -o $@ $(objects)
 	
-kernel.iso: kernel.bin
+myos.iso: kernel.bin
 	mkdir iso
 	mkdir iso/boot
 	mkdir iso/boot/grub
 	cp $< iso/boot/
-	echo 'set timeout-0' >> iso/boot/grub/grub.cfg
-	echo 'set default-0' >> iso/boot/grub/grub.cfg
+	echo 'set timeout=5' >> iso/boot/grub/grub.cfg
+	echo 'set default=0' >> iso/boot/grub/grub.cfg
 	echo 'menuentry "myos"{' >> iso/boot/grub/grub.cfg
 	echo '  multiboot /boot/kernel.bin' >> iso/boot/grub/grub.cfg
 	echo ' boot' >> iso/boot/grub/grub.cfg
 	echo '}' >> iso/boot/grub/grub.cfg
-	grub-mkrescue --output=$@ iso
+	grub-mkrescue --output=myos.iso iso
 	rm -rf iso
+
+all: myos.iso
+
+.PHONY: clean
+
+clean:
+	rm -f src/*.o
+	rm -f src/drivers/*.o
+	rm -f myos.iso
+	rm -f kernel.bin
