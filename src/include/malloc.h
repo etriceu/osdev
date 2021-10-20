@@ -6,5 +6,6 @@
 
 void memInit();
 uint8_t* malloc(size_t size);
+void free(uint8_t *ptr);
 
 #endif // MALLOC_H_INCLUDED
