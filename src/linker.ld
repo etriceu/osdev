@@ -33,4 +33,5 @@ SECTIONS
         *(.fini_array*)
         *(.comment)
     }
+    kernelEnd = .;
 }
