@@ -1,4 +1,7 @@
 #include "../include/ata.h"
+#include "../include/malloc.h"
+
+uint32_t diskSize = 0;
 
 void ataRead(uint32_t lba, uint8_t n, uint8_t *dest)
 {
@@ -40,4 +43,32 @@ void ataWrite(uint32_t lba, uint8_t n, uint8_t *src)
 		for(uint8_t *end = src+512; src != end; src+=2)
 			out2(0x1f0, *(uint16_t*)(src));
 	}
+}
+
+uint32_t ataGetSize()
+{
+	if(diskSize == 0)
+	{
+		out(0x1f2, 0);
+		out(0x1f3, 0);
+		out(0x1f4, 0);
+		out(0x1f5, 0);
+		out(0x1f7, 0xec);
+		
+		uint32_t ret = 0;
+		
+		uint16_t *buf = malloc(512);
+		if(in(0x1f7))
+		{
+			while(in(0x1F7) & 0x80);
+			
+			for(int n = 0; n < 256; n++)
+				buf[n] = in2(0x1f0);
+			
+			ret = *(uint32_t*)&buf[60];
+		}
+		free(buf);
+		diskSize = ret-1;
+	}
+	return diskSize;
 }
