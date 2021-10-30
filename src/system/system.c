@@ -25,7 +25,7 @@ void system(const char *cmd)
 	if(argc)
 	{
 		args = malloc(sizeof(char*)*argc);
-		for(int n = 0, a = 0; n < size; n++)
+		for(int n = 0, a = 0; n < size-1; n++)
 			if(cmd2[n] == 0)
 			{
 				args[a] = &cmd2[n+1];

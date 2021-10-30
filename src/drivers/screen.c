@@ -14,6 +14,11 @@ void setStyle(uint16_t s)
 	textStyle = s;
 }
 
+uint8_t getStyle()
+{
+	return textStyle;
+}
+
 unsigned int getWidth()
 {
 	return textWidth;
@@ -51,6 +56,12 @@ void moveCursor(int pos)
 	out(0x3D5, (uint8_t) (pos & 0xFF));
 	out(0x3D4, 0x0E);
 	out(0x3D5, (uint8_t) ((pos >> 8) & 0xFF));
+	textPosition = pos;
+}
+
+int getCursorPos()
+{
+	return textPosition;
 }
 
 void clear()
@@ -58,7 +69,6 @@ void clear()
 	for(int n = 0; n < textWidth*textHeight; n++)
 		videoMemory[n] = (textStyle | 0x0000)<<8;
 	
-	textPosition = 0;
 	moveCursor(0);
 }
 

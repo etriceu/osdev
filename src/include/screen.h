@@ -32,6 +32,7 @@
 #define BLINK				0x80 //1 bbb ffff
 
 void setStyle(uint16_t s);
+uint8_t getStyle();
 unsigned int getWidth();
 unsigned int getHeight();
 
@@ -39,6 +40,7 @@ int8_t isCursor();
 void disableCursor();
 void enableCursor(uint8_t start, uint8_t end);
 void moveCursor(int pos);
+int getCursorPos();
 
 void clear();
 void print(const char *str);

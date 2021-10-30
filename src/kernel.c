@@ -31,6 +31,13 @@ extern void kernelMain()
 					cmdi = 0;
 					system(cmd);
 				}
+				else if(key == KEY_BACKSPACE && cmdi > 0)
+				{
+					cmdi--;
+					moveCursor(getCursorPos()-1);
+					setChar(getCursorPos(), 0, getStyle());
+					cmd[cmdi] = 0;
+				}
 				else if(key <= '~')
 				{
 					printn(&key, 1);
