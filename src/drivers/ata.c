@@ -29,7 +29,7 @@ void ataWrite(uint32_t lba, uint8_t n, uint8_t *src)
 	while(in(0x1f7) & 0x80);
 		
 	out(0x1f1, 0x00);
-	out(0x1f2, 0x01);
+	out(0x1f2, n);
 	out(0x1f3, (uint8_t)lba);
 	out(0x1f4, (uint8_t)(lba >> 8));
 	out(0x1f5, (uint8_t)(lba >> 16));
