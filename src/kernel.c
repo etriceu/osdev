@@ -1,21 +1,16 @@
 #include "include/keyboard.h"
 #include "include/system.h"
 #include "include/malloc.h"
+#include "include/myfs.h"
 
 extern void kernelMain()
 {
 	memInit();
 	clear();
+	
 	setStyle(FG_PURPLE);
 	print("MyOS :)\n\n");
 	setStyle(FG_GREY);
-	
-	
-	char *test = malloc(26);
-	for(int n = 0; n < 26; n++)
-		test[n] = 'A'+n;
-	
-	print(test);
 	
 	const int cmdSize = 16;
 	char cmd[cmdSize];
