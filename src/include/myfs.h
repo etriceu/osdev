@@ -2,6 +2,9 @@
 #define MYFS_H
 
 #include <stdint.h>
+#include <stddef.h>
+
+#define EOF 1
 
 struct node
 {
@@ -9,21 +12,36 @@ struct node
 	struct node *next;
 };
 
-struct file
+struct filerw
 {
-	uint32_t start;
-	uint32_t rstart, rsize, rpos;
-	uint32_t wstart, wsize, wpos;
+	uint32_t size, offset, pos, next;
+	uint16_t bufpos;
+	uint8_t buf[512];
 };
 
-extern struct node *nodes;
+struct file
+{
+	uint32_t lba;
+	uint16_t lastSize;
+	struct filerw read;
+	struct filerw write;
+};
 
+struct node* getNodes();
 uint8_t mount();
 void umount();
+
 void newFile(const char *name);
 void getFileName(struct node *nod, char *dest);
 struct node* findFile(const char* name);
 void removeFile(struct node* nod);
 void renameFile(struct node* nod, const char *name);
+
+struct file* fopen(struct node* nod);
+void fclose(struct file *file);
+uint8_t fread(struct file *file, size_t size, uint8_t *dest);
+void fwrite(struct file *file, size_t size, uint8_t *src);
+void fflush(struct file *file);
+void appendMode(struct file *file);
 
 #endif // MYFS_H_INCLUDED

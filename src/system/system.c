@@ -76,7 +76,7 @@ void system(const char *cmd)
 	else if(strcmp(cmd, "ls"))
 	{
 		char *name = malloc(512);
-		for(struct node *nod = nodes; nod != 0; nod = nod->next)
+		for(struct node *nod = getNodes(); nod != 0; nod = nod->next)
 		{
 			getFileName(nod, name);
 			print(name);
