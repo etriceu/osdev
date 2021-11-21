@@ -2,7 +2,7 @@ GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O1
 ASMARG = --32
 LDARG = -melf_i386
 
-objects = src/loader.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/system/system.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdt.o src/cpu/gdtFlush.o
+objects = src/loader.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/system/system.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdt.o src/cpu/gdtFlush.o src/cpu/idt.o src/cpu/isr.o  src/cpu/interrupts.o
 %.o: %.c
 	gcc $(GCCARG) -o $@ -c $<
 

@@ -3,11 +3,13 @@
 #include "include/malloc.h"
 #include "include/myfs.h"
 #include "include/gdt.h"
+#include "include/idt.h"
 
 extern void kernelMain()
 {
 	memInit();
 	gdtInit();
+	idtInit();
 	
 	clear();
 	
@@ -15,6 +17,8 @@ extern void kernelMain()
 	print("MyOS :)\n\n");
 	setStyle(FG_GREY);
 	
+	asm volatile("int $1");//test debug
+
 	const int cmdSize = 16;
 	char cmd[cmdSize];
 	int cmdi = 0;
