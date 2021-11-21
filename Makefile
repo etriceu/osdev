@@ -1,8 +1,8 @@
-GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore
+GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O1
 ASMARG = --32
 LDARG = -melf_i386
 
-objects = src/loader.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/system/system.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o
+objects = src/loader.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/system/system.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdt.o src/cpu/gdtFlush.o
 %.o: %.c
 	gcc $(GCCARG) -o $@ -c $<
 
@@ -33,6 +33,7 @@ all: myos.iso
 clean:
 	rm -f src/*.o
 	rm -f src/drivers/*.o
+	rm -f src/cpu/*.o
 	rm -f src/system/*.o
 	rm -f src/fs/*.o
 	rm -f myos.iso

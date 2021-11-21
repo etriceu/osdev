@@ -2,10 +2,13 @@
 #include "include/system.h"
 #include "include/malloc.h"
 #include "include/myfs.h"
+#include "include/gdt.h"
 
 extern void kernelMain()
 {
 	memInit();
+	gdtInit();
+	
 	clear();
 	
 	setStyle(FG_PURPLE);
