@@ -1,14 +1,13 @@
-ENTRY(loader)
+ENTRY(_start)
 OUTPUT_FORMAT(elf32-i386)
 OUTPUT_ARCH(i386:i386)
 
 SECTIONS
 {
-    . = 0x0100000;
+    . = 0x7c00;
     
     .text :
     {
-        *(.multiboot)
         *(.text*)
         *(.rodata)
     }
@@ -22,16 +21,4 @@ SECTIONS
         
         *(.data)
     }
-    
-    .bss :
-    {
-        *(.bss)
-    }
-    
-    /DISCARD/ :
-    {
-        *(.fini_array*)
-        *(.comment)
-    }
-    kernelEnd = .;
-}
+} 

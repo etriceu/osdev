@@ -2,15 +2,12 @@
 
 #define SIZE sizeof(size_t)
 
-extern uint8_t kernelEnd;
-
-size_t ramBegin, ramEnd = 0x40000000; //idk how to check ram size
+size_t ramBegin = 0x100000, ramEnd = 0x40000000; //idk how to check ram size
 
 size_t last;
 
 void memInit()
 {
-	ramBegin = (size_t)&kernelEnd;
 	for(int *n = (int*)ramBegin; n != (int*)ramEnd; n++)
 		*n = 0;
 }
