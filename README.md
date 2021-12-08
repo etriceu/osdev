@@ -4,7 +4,7 @@ Simple operating system for x86 architecture.
 # Supports
 Video: 80x25 color text mode
 
-Disk: ATA PIO 24bit, only primary master
+Disk: ATA PIO 24bit
 
 Keyboard: PS2 US QWERTY
 

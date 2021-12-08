@@ -9,6 +9,7 @@
 struct node
 {
 	uint8_t address[3];
+	void *mntPtr;
 	struct node *next;
 };
 
@@ -25,15 +26,24 @@ struct file
 	uint16_t lastSize;
 	struct filerw read;
 	struct filerw write;
+	struct node *node;
 };
 
-struct node* getNodes();
-uint8_t mount();
-void umount();
+struct mount
+{
+	uint32_t begin, end;
+	uint8_t device;
+	struct node *nodes;
+	struct mount *next;
+};
 
-void newFile(const char *name);
+struct mount* getMountPoints();
+struct mount* mount(uint8_t device, uint32_t begin, uint32_t end);
+void umount(struct mount* mnt);
+
+void newFile(struct mount *mnt, const char *name);
 void getFileName(struct node *nod, char *dest);
-struct node* findFile(const char* name);
+struct node* findFile(struct mount *mnt, const char* name);
 void removeFile(struct node* nod);
 void renameFile(struct node* nod, const char *name);
 

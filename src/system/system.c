@@ -2,6 +2,19 @@
 #include "../include/functions.h"
 #include "../include/malloc.h"
 #include "../include/myfs.h"
+#include "../include/ata.h"
+
+uint8_t checkMnt()
+{
+	if(!getMountPoints())
+	{
+		setStyle(FG_RED);
+		print("No available mount point\n");
+		setStyle(FG_GREEN);
+		return 0;
+	}
+	return 1;
+}
 
 void system(const char *cmd)
 {
@@ -42,20 +55,26 @@ void system(const char *cmd)
 		clear();
 	else if(strcmp(cmd2, "newfile"))
 	{
-		if(argc == 1)
-			newFile(args[0]);
-		else
-			print("newfile [fileName]\n");
+		if(checkMnt())
+		{
+			if(argc == 1)
+				newFile(getMountPoints(), args[0]); // get first mnt
+			else
+				print("newfile [fileName]\n");print("3\n");
+		}
 	}
 	else if(strcmp(cmd2, "rename"))
 	{
 		if(argc == 2)
 		{
-			struct node *nod = findFile(args[0]);
-			if(nod)
-				renameFile(nod, args[1]);
-			else
-				print("File not found.\n");
+			if(checkMnt())
+			{
+				struct node *nod = findFile(getMountPoints(), args[0]);
+				if(nod)
+					renameFile(nod, args[1]);
+				else
+					print("File not found.\n");
+			}
 		}
 		else
 			print("rename [fileName] [newName]\n");
@@ -64,45 +83,54 @@ void system(const char *cmd)
 	{
 		if(argc == 1)
 		{
-			struct node *nod = findFile(args[0]);
-			if(nod)
-				removeFile(nod);
-			else
-				print("File not found.\n");
+			if(checkMnt())
+			{
+				struct node *nod = findFile(getMountPoints(), args[0]);
+				if(nod)
+					removeFile(nod);
+				else
+					print("File not found.\n");
+			}
 		}
 		else
 			print("rm [fileName]\n");
 	}
 	else if(strcmp(cmd, "ls"))
 	{
-		char *name = malloc(512);
-		for(struct node *nod = getNodes(); nod != 0; nod = nod->next)
+		if(checkMnt())
 		{
-			getFileName(nod, name);
-			print(name);
-			print("\n");
+			char *name = malloc(512);
+			for(struct node *nod = getMountPoints()->nodes; nod != 0; nod = nod->next)
+			{
+				getFileName(nod, name);
+				print(name);
+				print("\n");
+			}
+			free(name);
 		}
-		free(name);
 	}
-	else if(strcmp(cmd, "format"))
+	else if(strcmp(cmd, "format")) // format first device
 	{
 		char *zero = malloc(512*256);
 		uint32_t n = 0;
 		
 		print("formating... ");
+		uint32_t diskSize = ataGetSize(PRIMARY_MASTER);
+		for(; n <= diskSize; n += 255)
+			ataWrite(PRIMARY_MASTER, n, 255, zero);
 		
-		for(; n <= ataGetSize(); n += 255)
-			ataWrite(n, 255, zero);
-		
-		ataWrite(n, ataGetSize()-n*255, zero);
+		ataWrite(PRIMARY_MASTER, n, diskSize-n*255, zero);
 		
 		print("done\n");
 		free(zero);
 	}
-	else if(strcmp(cmd, "mount"))
-		mount();
+	else if(strcmp(cmd, "mount")) // default mount
+		mount(PRIMARY_MASTER, 1, ataGetSize(PRIMARY_MASTER));
 	else if(strcmp(cmd, "umount"))
-		umount();
+	{
+		if(checkMnt())
+			umount(getMountPoints());
+	}
 	else
 		print("commands:\nexit, clear, newfile, rm, ls, format, mount, umount, rename\n");
 	

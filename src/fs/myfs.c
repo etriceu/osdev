@@ -25,21 +25,34 @@ file table - array of 3B to the beginnings of files
 #define LBA_SIZE 3
 #define TABLE_SIZE  512/LBA_SIZE*LBA_SIZE
 
-struct node *nodes = 0;
+struct mount *mountPoints = 0;
 
-struct node* getNodes()
+struct mount* getMountPoints()
 {
-	return nodes;
+	return mountPoints;
 }
 
-uint8_t mount()
+struct mount* mount(uint8_t device, uint32_t begin, uint32_t end)
 {
-	struct node **nod = &nodes;
-	uint8_t *buf = malloc(512);
-	uint32_t end;
-	for(end = ataGetSize(); end > 0; end--)
+	struct mount *mnt = malloc(sizeof(struct mount));
+	mnt->begin = begin;
+	mnt->device = device;
+	mnt->next = 0;
+	if(end == 0)
+		end = ataGetSize(device);
+	mnt->end = end;
+	
+	if(!end)
 	{
-		ataRead(end, 1, buf);
+		free(mnt);
+		return NULL;
+	}
+
+	struct node **nod = &mnt->nodes;
+	uint8_t *buf = malloc(512);
+	for(; end >= begin; end--)
+	{
+		ataRead(device, end, 1, buf);
 		uint8_t sum = 0;
 		for(int n = 0; n < 512 && !sum; n++)
 			sum |= buf[n];
@@ -55,32 +68,50 @@ uint8_t mount()
 				((struct node*)(*nod))->address[0] = buf[n];
 				((struct node*)(*nod))->address[1] = buf[n+1];
 				((struct node*)(*nod))->address[2] = buf[n+2];
+				((struct node*)(*nod))->mntPtr = mnt;
 				nod = &((struct node*)(*nod))->next;
 			}
 	}
-	
+
 	free(buf);
-	return end ? 1 : 0;
+
+	if(mountPoints == 0)
+		mountPoints = mnt;
+	else
+		for(struct mount *m = mountPoints; m->next != 0 || !(m->next = mnt); m = m->next);
+	
+	return mnt;
 }
 
-void umount()
+void umount(struct mount *mnt)
 {
-	for(struct node *nod = nodes; nod != 0;)
+	for(struct node *nod = mnt->nodes; nod != 0;)
 	{
 		void *ptr = nod;
 		nod = nod->next;
 		free(ptr);
 	}
+	
+	if(mountPoints == mnt)
+		mountPoints = mnt->next;
+	else
+	{
+		struct mount *m = mountPoints;
+		for(; m->next != mnt && m->next != 0; m = m->next);
+		if(m != 0)
+			m->next = mnt->next;
+	}
+	free(mnt);
 }
 
-void newFile(const char *name)
+void newFile(struct mount *mnt, const char *name)
 {
 	uint32_t pos = 1;
 	uint8_t *buf = malloc(512);
 	
 	while(1)
 	{
-		ataRead(pos, 1, buf);
+		ataRead(mnt->device, pos, 1, buf);
 		uint32_t size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
 		if(size == 0)
 		{
@@ -96,7 +127,7 @@ void newFile(const char *name)
 			for(; n < 512; n++)
 				buf[n] = 0;
 			
-			ataWrite(pos, 1, buf);
+			ataWrite(mnt->device, pos, 1, buf);
 			
 			break;
 		}
@@ -104,17 +135,18 @@ void newFile(const char *name)
 			pos += size;
 	}
 	
-	struct node **nod = &nodes;
+	struct node **nod = &mnt->nodes;
 	for(; *nod != 0; nod = &((struct node*)(*nod))->next);
 	*nod = (struct node*)malloc(sizeof(struct node));
 	((struct node*)(*nod))->next = 0;
 	((struct node*)(*nod))->address[0] = (uint8_t)pos;
 	((struct node*)(*nod))->address[1] = (uint8_t)(pos>>8);
 	((struct node*)(*nod))->address[2] = (uint8_t)(pos>>16);
+	((struct node*)(*nod))->mntPtr = mnt;
 	
-	for(uint32_t end = ataGetSize(); end > 0; end--)
+	for(uint32_t end = mnt->end; end >= mnt->begin; end--)
 	{
-		ataRead(end, 1, buf);
+		ataRead(mnt->device, end, 1, buf);
 		for(int n = 0; n < TABLE_SIZE; n += LBA_SIZE)
 			if((buf[n] | buf[n+1] | buf[n+2]) == 0)
 			{
@@ -122,7 +154,7 @@ void newFile(const char *name)
 				buf[n+1] = (uint8_t)(pos>>8);
 				buf[n+2] = (uint8_t)(pos>>16);
 				
-				ataWrite(end, 1, buf);
+				ataWrite(mnt->device, end, 1, buf);
 				free(buf);
 				return;
 			}
@@ -133,7 +165,8 @@ void newFile(const char *name)
 void getFileName(struct node *nod, char *dest)
 {
 	uint8_t *buf = malloc(512);
-	ataRead(*(uint32_t*)nod->address & 0x00ffffff, 1, buf);
+	struct mount *mnt = nod->mntPtr;
+	ataRead(mnt->device, *(uint32_t*)nod->address & 0x00ffffff, 1, buf);
 	for(int n = NAME_OFFSET; buf[n] != 0 && n < 512; n++, dest++)
 		*dest = buf[n];
 	
@@ -142,12 +175,12 @@ void getFileName(struct node *nod, char *dest)
 	free(buf);
 }
 
-struct node* findFile(const char* name)
+struct node* findFile(struct mount *mnt, const char* name)
 {
 	uint8_t *buf = malloc(512);
-	for(struct node *nod = nodes; nod != 0; nod = nod->next)
+	for(struct node *nod = mnt->nodes; nod != 0; nod = nod->next)
 	{
-		ataRead(*(uint32_t*)nod->address & 0x00ffffff, 1, buf);
+		ataRead(mnt->device, *(uint32_t*)nod->address & 0x00ffffff, 1, buf);
 		if(strcmp(name, &buf[NAME_OFFSET]))
 		{
 			free(buf);
@@ -160,15 +193,16 @@ struct node* findFile(const char* name)
 
 void removeFile(struct node* nod)
 {
+	struct mount *mnt = nod->mntPtr;
 	uint8_t *buf = malloc(512);
 	uint8_t *zero = malloc(512);
 	uint8_t sum = 0;
 	uint32_t end;
 	uint8_t found = 0;
-	for(end = ataGetSize(); end > 0 && !found; end--)
+	for(end = mnt->end; end >= mnt->begin && !found; end--)
 	{
 		sum = 0;
-		ataRead(end, 1, buf);
+		ataRead(mnt->device, end, 1, buf);
 		for(int n = 0; n < TABLE_SIZE; n += LBA_SIZE)
 		{
 			if( buf[n] == nod->address[0] &&
@@ -179,7 +213,7 @@ void removeFile(struct node* nod)
 				buf[n+1] = 0;
 				buf[n+2] = 0;
 				found = 1;
-				ataWrite(end, 1, buf);
+				ataWrite(mnt->device, end, 1, buf);
 			}
 			sum |= buf[n];
 			sum |= buf[n+1];
@@ -191,15 +225,15 @@ void removeFile(struct node* nod)
 	if(!sum && found)
 		while(1)
 		{
-			ataRead(end-1, 1, buf);
+			ataRead(mnt->device, end-1, 1, buf);
 			sum = 0;
 			for(int n = 0; n < 512 && !sum; n++)
 				sum |= buf[n];
 			
 			if(sum)
 			{
-				ataWrite(end, 1, buf);
-				ataWrite(end-1, 1, zero);
+				ataWrite(mnt->device, end, 1, buf);
+				ataWrite(mnt->device, end-1, 1, zero);
 				end--;
 			}
 			else
@@ -209,12 +243,12 @@ void removeFile(struct node* nod)
 	uint32_t size, next, lba = *(uint32_t*)nod->address & 0x00ffffff;
 	while(1)
 	{
-		ataRead(lba, 1, buf);
+		ataRead(mnt->device, lba, 1, buf);
 		size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
 		next = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
 		
 		for(uint32_t n = 0; n < size; n++)
-			ataWrite(lba+n, 1, zero);
+			ataWrite(mnt->device, lba+n, 1, zero);
 		
 		if(next)
 			lba = next;
@@ -222,13 +256,13 @@ void removeFile(struct node* nod)
 			break;
 	}
 
-	if(nod == nodes)
+	if(nod == mnt->nodes)
 	{
-		nodes = nod->next;
+		mnt->nodes = nod->next;
 		free(nod);
 	}
 	else
-		for(struct node *n = nodes; n != 0; n = n->next)
+		for(struct node *n = mnt->nodes; n != 0; n = n->next)
 			if(n->next == nod)
 			{
 				n->next = nod->next;
@@ -242,29 +276,32 @@ void removeFile(struct node* nod)
 
 void renameFile(struct node* nod, const char *name)
 {
+	struct mount *mnt = nod->mntPtr;
 	uint8_t *buf = malloc(512);
 	uint32_t lba = *(uint32_t*)nod->address & 0x00ffffff;
-	ataRead(lba, 1, buf);
+	ataRead(mnt->device, lba, 1, buf);
 	
 	int n = NAME_OFFSET;
 	for(; name[n] != 0; n++)
 		buf[n] = name[n];
 	buf[n] = 0;
 	
-	ataWrite(lba, 1, buf);
+	ataWrite(mnt->device, lba, 1, buf);
 	free(buf);
 }
 
 struct file* fopen(struct node* nod)
 {
+	struct mount *mnt = nod->mntPtr;
 	struct file *file = malloc(sizeof(struct file));
 	
 	file->lba = *(uint32_t*)nod->address & 0x00ffffff;
 	file->read.offset = file->lba+1;
 	file->read.pos = 0;
 	file->read.bufpos = 0;
+	file->node = nod;
 	
-	ataRead(file->lba, 1, file->read.buf);
+	ataRead(mnt->device, file->lba, 1, file->read.buf);
 	file->read.size = *(uint32_t*)(file->read.buf+SIZE_OFFSET) & 0x00ffffff;
 	file->read.next = *(uint32_t*)(file->read.buf+NEXT_OFFSET) & 0x00ffffff;
 	file->lastSize = *(uint16_t*)(file->read.buf+LSIZE_OFFSET);
@@ -282,17 +319,19 @@ void fclose(struct file *file)
 
 uint8_t fread(struct file *file, size_t size, uint8_t *dest)
 {
+	struct node *nod = file->node;
+	struct mount *mnt = nod->mntPtr;
 	for(uint8_t *end = dest+size; dest < end;)
 	{
 		if(file->read.bufpos == 0)
 		{
-			ataRead(file->read.offset+file->read.pos, 1, file->read.buf);
+			ataRead(mnt->device, file->read.offset+file->read.pos, 1, file->read.buf);
 			file->read.pos++;
 			if(file->read.pos > file->read.size)
 			{
 				file->read.pos = 0;
 				file->read.offset = file->read.next+1;
-				ataRead(file->read.offset, 1, file->read.buf);
+				ataRead(mnt->device, file->read.offset, 1, file->read.buf);
 				file->read.size = *(uint32_t*)(file->read.buf+SIZE_OFFSET) & 0x00ffffff;
 				file->read.next = *(uint32_t*)(file->read.buf+NEXT_OFFSET) & 0x00ffffff;
 				continue;
@@ -313,9 +352,11 @@ uint8_t fread(struct file *file, size_t size, uint8_t *dest)
 
 void write(struct file *file)
 {
+	struct node *nod = file->node;
+	struct mount *mnt = nod->mntPtr;
 	uint8_t *buf = malloc(1024);
 	uint32_t size;
-	ataRead(file->write.offset+file->write.pos, 1, buf);
+	ataRead(mnt->device, file->write.offset+file->write.pos, 1, buf);
 
 	if(*(uint32_t*)(buf+SIZE_OFFSET))
 	{
@@ -323,10 +364,10 @@ void write(struct file *file)
 		do
 		{
 			next += *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
-			ataRead(next, 2, buf);
+			ataRead(mnt->device, next, 2, buf);
 		} while(*(uint32_t*)(buf+SIZE_OFFSET) || *(uint32_t*)(buf+SIZE_OFFSET+512));
 
-		ataRead(file->write.offset-1, 1, buf);
+		ataRead(mnt->device, file->write.offset-1, 1, buf);
 		size = file->write.pos+2;
 
 		buf[SIZE_OFFSET] = (uint8_t)size;
@@ -336,31 +377,31 @@ void write(struct file *file)
 		buf[NEXT_OFFSET+1] = (uint8_t)(next>>8);
 		buf[NEXT_OFFSET+2] = (uint8_t)(next>>16);
 
-		ataWrite(file->write.offset-1, 1, buf);
+		ataWrite(mnt->device, file->write.offset-1, 1, buf);
 		file->write.pos = 0;
 		file->write.offset = next+1;
 		buf[SIZE_OFFSET+512] = 1;
-		ataWrite(next, 1, buf+512);
+		ataWrite(mnt->device, next, 1, buf+512);
 	}
 
-	ataWrite(file->write.offset+file->write.pos, 1, file->write.buf);
+	ataWrite(mnt->device, file->write.offset+file->write.pos, 1, file->write.buf);
 	file->write.pos++;
 	
 	if(file->write.bufpos % 512)
 	{
-		ataRead(file->lba, 1, buf);
+		ataRead(mnt->device, file->lba, 1, buf);
 		buf[LSIZE_OFFSET] = (uint8_t)file->write.bufpos;
 		buf[LSIZE_OFFSET+1] = (uint8_t)(file->write.bufpos>>8);
-		ataWrite(file->lba, 1, buf);
+		ataWrite(mnt->device, file->lba, 1, buf);
 		file->lastSize = file->write.bufpos;
 	}
 	
-	ataRead(file->write.offset-1, 1, buf);
+	ataRead(mnt->device, file->write.offset-1, 1, buf);
 	size = file->write.pos+1;
 	buf[SIZE_OFFSET] = (uint8_t)size;
 	buf[SIZE_OFFSET+1] = (uint8_t)(size>>8);
 	buf[SIZE_OFFSET+2] = (uint8_t)(size>>16);
-	ataWrite(file->write.offset-1, 1, buf);
+	ataWrite(mnt->device, file->write.offset-1, 1, buf);
 	
 	file->write.bufpos = 0;
 	free(buf);
@@ -385,12 +426,14 @@ void fflush(struct file *file)
 
 void appendMode(struct file *file)
 {
+	struct node *nod = file->node;
+	struct mount *mnt = nod->mntPtr;
 	uint8_t *buf = malloc(512);
 	uint32_t size, pos = file->lba;
 	
 	do
 	{
-		ataRead(pos, 1, buf);
+		ataRead(mnt->device, pos, 1, buf);
 		file->write.offset = pos+1;
 		pos = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
 	} while(pos);
@@ -402,9 +445,9 @@ void appendMode(struct file *file)
 	if(file->write.bufpos)
 	{
 		file->write.pos--;
-		ataRead(file->write.offset+file->write.pos, 1, file->write.buf);
+		ataRead(mnt->device, file->write.offset+file->write.pos, 1, file->write.buf);
 		buf = malloc(512);
-		ataWrite(file->write.offset+file->write.pos, 1, buf);
+		ataWrite(mnt->device, file->write.offset+file->write.pos, 1, buf);
 		free(buf);
 	}
 }

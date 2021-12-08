@@ -16,10 +16,8 @@ extern void kernelMain()
 	setStyle(FG_PURPLE);
 	print("MyOS :)\n\n");
 	setStyle(FG_GREY);
-	
-	asm volatile("int $1");//test debug
 
-	const int cmdSize = 16;
+	const int cmdSize = 32;
 	char cmd[cmdSize];
 	int cmdi = 0;
 	
