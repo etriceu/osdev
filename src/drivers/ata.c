@@ -1,7 +1,7 @@
 #include "../include/ata.h"
 #include "../include/malloc.h"
 
-uint32_t diskSize = 0;
+uint32_t diskSize[4] = {-1, -1, -1, -1};
 const uint16_t buses[] = {0x1f0, 0x1f0, 0x170, 0x170};
 const uint8_t disks[] = {0xe0, 0xf0, 0xe0, 0xf0};
 
@@ -51,6 +51,9 @@ void ataWrite(uint8_t device, uint32_t lba, uint8_t n, uint8_t *src)
 
 uint32_t ataGetSize(uint8_t device)
 {
+	if(diskSize[device] != -1)
+		return diskSize[device];
+	
 	uint16_t bus = buses[device];
 	out(bus+2, 0);
 	out(bus+3, 0);
@@ -72,6 +75,6 @@ uint32_t ataGetSize(uint8_t device)
 		ret = *(uint32_t*)&buf[60];
 	}
 	free(buf);
-	
+	diskSize[device] = ret-1;
 	return ret-1;
 }

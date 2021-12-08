@@ -41,17 +41,16 @@ struct mount* getMountPoints();
 struct mount* mount(uint8_t device, uint32_t begin, uint32_t end);
 void umount(struct mount* mnt);
 
-void newFile(struct mount *mnt, const char *name);
+struct node* newFile(struct mount *mnt, const char *name);
 void getFileName(struct node *nod, char *dest);
 struct node* findFile(struct mount *mnt, const char* name);
 void removeFile(struct node* nod);
 void renameFile(struct node* nod, const char *name);
 
-struct file* fopen(struct node* nod);
+struct file* fopen(struct node* nod, uint64_t *sizeOut);
 void fclose(struct file *file);
 uint8_t fread(struct file *file, size_t size, uint8_t *dest);
 void fwrite(struct file *file, size_t size, uint8_t *src);
 void fflush(struct file *file);
-void appendMode(struct file *file);
 
 #endif // MYFS_H_INCLUDED

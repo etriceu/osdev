@@ -104,9 +104,9 @@ void umount(struct mount *mnt)
 	free(mnt);
 }
 
-void newFile(struct mount *mnt, const char *name)
+struct node* newFile(struct mount *mnt, const char *name)
 {
-	uint32_t pos = 1;
+	uint32_t pos = mnt->begin;
 	uint8_t *buf = malloc(512);
 	
 	while(1)
@@ -156,10 +156,11 @@ void newFile(struct mount *mnt, const char *name)
 				
 				ataWrite(mnt->device, end, 1, buf);
 				free(buf);
-				return;
+				return *nod;
 			}
 	}
 	free(buf);
+	return 0;
 }
 
 void getFileName(struct node *nod, char *dest)
@@ -290,7 +291,7 @@ void renameFile(struct node* nod, const char *name)
 	free(buf);
 }
 
-struct file* fopen(struct node* nod)
+struct file* fopen(struct node* nod, uint64_t *sizeOut)
 {
 	struct mount *mnt = nod->mntPtr;
 	struct file *file = malloc(sizeof(struct file));
@@ -307,6 +308,10 @@ struct file* fopen(struct node* nod)
 	file->lastSize = *(uint16_t*)(file->read.buf+LSIZE_OFFSET);
 	
 	file->write = file->read;
+	
+	uint64_t s = appendMode(file);
+	if(sizeOut)
+		*sizeOut = s;
 	
 	return file;
 }
@@ -357,7 +362,6 @@ void write(struct file *file)
 	uint8_t *buf = malloc(1024);
 	uint32_t size;
 	ataRead(mnt->device, file->write.offset+file->write.pos, 1, buf);
-
 	if(*(uint32_t*)(buf+SIZE_OFFSET))
 	{
 		uint32_t next = file->write.offset+file->write.pos;
@@ -424,7 +428,7 @@ void fflush(struct file *file)
 		write(file);
 }
 
-void appendMode(struct file *file)
+uint64_t appendMode(struct file *file)
 {
 	struct node *nod = file->node;
 	struct mount *mnt = nod->mntPtr;
@@ -435,6 +439,8 @@ void appendMode(struct file *file)
 	{
 		ataRead(mnt->device, pos, 1, buf);
 		file->write.offset = pos+1;
+		size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
+		size--;
 		pos = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
 	} while(pos);
 	
@@ -450,4 +456,5 @@ void appendMode(struct file *file)
 		ataWrite(mnt->device, file->write.offset+file->write.pos, 1, buf);
 		free(buf);
 	}
+	return 512*size+file->lastSize;
 }
