@@ -139,19 +139,3 @@ void systemCall(Registers reg)
 	}
 	calls[reg.edi](reg);
 }
-
-int callTest(int a, int b, int c, int d, int e, int f)
-{
-	uint32_t *ret = malloc(4);
-	asm volatile("mov %0, %%edi;" :: "a" (a) : "%edi");
-	asm volatile("mov %0, %%esi;" :: "a" (b) : "%esi");
-	asm volatile("mov %0, %%ebp;" :: "a" (c) : "%ebp");
-	asm volatile("mov %0, %%ebx;" :: "a" (d) : "%ebx");
-	asm volatile("mov %0, %%edx;" :: "a" (e) : "%edx");
-	
-	asm volatile("mov %0, %%ecx;" :: "a" (ret) : "%ecx");
-	
-	asm volatile("int $128");
-	
-	return *ret;
-}
