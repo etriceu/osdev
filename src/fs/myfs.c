@@ -25,6 +25,8 @@ file table - array of 3B to the beginnings of files
 #define LBA_SIZE 3
 #define TABLE_SIZE  512/LBA_SIZE*LBA_SIZE
 
+uint64_t appendMode(struct file *file);
+
 struct mount *mountPoints = 0;
 
 struct mount* getMountPoints()
