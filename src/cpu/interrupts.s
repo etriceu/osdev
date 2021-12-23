@@ -208,3 +208,9 @@ isr31:
 	push $0
 	push $31
 	jmp isr_common
+	
+.global int128
+int128:
+	push $0
+	push $128
+	jmp isr_common

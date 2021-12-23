@@ -46,4 +46,6 @@ extern void isr29();
 extern void isr30();
 extern void isr31();
 
+extern void int128();
+
 #endif // ISR_H_INCLUDED

@@ -49,6 +49,8 @@ void idtInit()
 	setIDT(30, (uint32_t)isr30);
 	setIDT(31, (uint32_t)isr31);
 	
+	setIDT(128, (uint32_t)int128);
+	
 	idtReg.base = (uint32_t)&idt;
 	idtReg.limit = 256*sizeof(IDT)-1;
 	

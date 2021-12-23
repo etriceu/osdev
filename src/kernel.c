@@ -4,6 +4,7 @@
 #include "include/myfs.h"
 #include "include/gdt.h"
 #include "include/idt.h"
+#include "include/systemCall.h"
 
 extern void kernelMain()
 {
@@ -16,7 +17,7 @@ extern void kernelMain()
 	setStyle(FG_PURPLE);
 	print("MyOS :)\n\n");
 	setStyle(FG_GREY);
-
+	
 	const int cmdSize = 32;
 	char cmd[cmdSize];
 	int cmdi = 0;
