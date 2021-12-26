@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 void memInit();
-uint8_t* malloc(size_t size);
-void free(uint8_t *ptr);
+void* malloc(size_t size);
+void free(void *ptr);
 
 #endif // MALLOC_H_INCLUDED

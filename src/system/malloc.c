@@ -12,7 +12,7 @@ void memInit()
 		*n = 0;
 }
 
-uint8_t* malloc(size_t size)
+void* malloc(size_t size)
 {
 	size_t s = 0;
 	while(1)
@@ -39,17 +39,17 @@ uint8_t* malloc(size_t size)
 	last -= s-1;
 	*(size_t*)last = size;
 	last += SIZE;
-	uint8_t *ptr = (uint8_t*)last;
+	void *ptr = (void*)last;
 	last += size;
 	
 	return ptr;
 }
 
-void free(uint8_t *ptr)
+void free(void *ptr)
 {
 	size_t *size = (size_t*)(ptr-SIZE);
 	for(uint8_t *end = ptr+*size; ptr != end; ptr++)
-		*ptr = 0;
+		*((uint8_t*)ptr) = 0;
 	
 	*size = 0;
 }
