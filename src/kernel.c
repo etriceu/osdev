@@ -18,6 +18,17 @@ extern void kernelMain()
 	print("MyOS :)\n\n");
 	setStyle(FG_GREY);
 	
+	char *buf = malloc(512);
+	ataRead(PRIMARY_MASTER, 1, 1, buf);
+	uint32_t end = *((uint32_t*)(buf+509)) & 0x00ffffff;//read the end of myfs
+	free(buf);
+	
+	struct mount *mnt = mount(PRIMARY_MASTER, 1, end);
+	if(findFile(mnt, "kernel.bin"))
+		print("yeah!\n");
+	else
+		print("bruh\n");
+	
 	const int cmdSize = 32;
 	char cmd[cmdSize];
 	int cmdi = 0;

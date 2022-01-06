@@ -53,3 +53,18 @@ gdtReg:
 
 . = _start + 510
 .word 0xaa55
+end:
+## myfs structure
+.byte 64 # 32KB
+.byte 0
+.byte 0
+#next
+.byte 0
+.byte 0
+.byte 0
+#last sector size
+.byte 0
+.byte 0
+#name
+.ascii "kernel.bin\0"
+. = end + 512
