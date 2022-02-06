@@ -58,7 +58,7 @@ void f15(Registers reg){
 }
 
 void f16(Registers reg){
-	*((struct file**)reg.ecx) = fopen((struct node*)reg.esi, (uint64_t*)reg.ebp);
+	*((struct file**)reg.ecx) = fopen((struct node*)reg.esi, (uint64_t*)reg.ebp, reg.ebx);
 }
 void f17(Registers reg){
 	fclose((struct file*)reg.esi);

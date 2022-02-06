@@ -6,6 +6,9 @@
 
 #define EOF 1
 
+#define MYFS_READ 0
+#define MYFS_WRITE 1
+
 struct node
 {
 	uint8_t address[3];
@@ -47,7 +50,7 @@ struct node* findFile(struct mount *mnt, const char* name);
 void removeFile(struct node* nod);
 void renameFile(struct node* nod, const char *name);
 
-struct file* fopen(struct node* nod, uint64_t *sizeOut);
+struct file* fopen(struct node* nod, uint64_t *sizeOut, uint8_t mode);
 void fclose(struct file *file);
 uint8_t fread(struct file *file, size_t size, uint8_t *dest);
 void fwrite(struct file *file, size_t size, uint8_t *src);

@@ -35,10 +35,10 @@ int8_t getKeyStatus(uint8_t key){
 }
 
 //malloc
-uint8_t* malloc(size_t size){
+void* malloc(size_t size){
 	return (uint8_t*)call(6, size, 0, 0, 0);
 }
-void free(uint8_t *ptr){
+void free(void *ptr){
 	call(7, (uint32_t)ptr, 0, 0, 0);
 }
 
@@ -69,8 +69,8 @@ void renameFile(struct node* nod, const char *name){
 	call(15, (uint32_t)nod, (uint32_t)name, 0, 0);
 }
 
-struct file* fopen(struct node* nod, uint64_t *sizeOut){
-	return (struct file*)call(16, (uint32_t)nod, (uint32_t)sizeOut, 0, 0);
+struct file* fopen(struct node* nod, uint64_t *sizeOut, uint8_t mode){
+	return (struct file*)call(16, (uint32_t)nod, (uint32_t)sizeOut, (uint32_t)mode, 0);
 }
 void fclose(struct file *file){
 	call(17, (uint32_t)file, 0, 0, 0);

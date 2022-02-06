@@ -293,7 +293,7 @@ void renameFile(struct node* nod, const char *name)
 	free(buf);
 }
 
-struct file* fopen(struct node* nod, uint64_t *sizeOut)
+struct file* fopen(struct node* nod, uint64_t *sizeOut, uint8_t mode)
 {
 	struct mount *mnt = nod->mntPtr;
 	struct file *file = malloc(sizeof(struct file));
@@ -311,9 +311,38 @@ struct file* fopen(struct node* nod, uint64_t *sizeOut)
 	
 	file->write = file->read;
 	
-	uint64_t s = appendMode(file);
+	
+	uint8_t *buf = malloc(512);
+	uint32_t size, pos = file->lba;
+	do
+	{
+		ataRead(mnt->device, pos, 1, buf);
+		file->write.offset = pos+1;
+		size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
+		size--;
+		pos = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
+	} while(pos);
+	
 	if(sizeOut)
-		*sizeOut = s;
+		*sizeOut = 512*(size-1)+file->lastSize;
+	
+	if(mode)
+	{
+		file->write.pos = (*(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff) - 1;
+		file->write.bufpos = file->lastSize;
+		free(buf);
+		
+		if(file->write.bufpos)
+		{
+			file->write.pos--;
+			ataRead(mnt->device, file->write.offset+file->write.pos, 1, file->write.buf);
+			buf = malloc(512);
+			ataWrite(mnt->device, file->write.offset+file->write.pos, 1, buf);
+			free(buf);
+		}
+	}
+	else
+		free(buf);
 	
 	return file;
 }
@@ -349,7 +378,8 @@ uint8_t fread(struct file *file, size_t size, uint8_t *dest)
 		dest++;
 		file->read.bufpos++;
 		
-		if(file->read.next == 0 && file->read.bufpos > file->lastSize)
+		if(file->read.next == 0 && file->read.size-1 <= file->read.pos &&
+			file->read.bufpos > file->lastSize)
 			return EOF;
 		
 		file->read.bufpos %= 512;
@@ -428,35 +458,4 @@ void fflush(struct file *file)
 {
 	if(file->write.bufpos)
 		write(file);
-}
-
-uint64_t appendMode(struct file *file)
-{
-	struct node *nod = file->node;
-	struct mount *mnt = nod->mntPtr;
-	uint8_t *buf = malloc(512);
-	uint32_t size, pos = file->lba;
-	
-	do
-	{
-		ataRead(mnt->device, pos, 1, buf);
-		file->write.offset = pos+1;
-		size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
-		size--;
-		pos = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
-	} while(pos);
-	
-	file->write.pos = (*(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff) - 1;
-	file->write.bufpos = file->lastSize;
-	free(buf);
-	
-	if(file->write.bufpos)
-	{
-		file->write.pos--;
-		ataRead(mnt->device, file->write.offset+file->write.pos, 1, file->write.buf);
-		buf = malloc(512);
-		ataWrite(mnt->device, file->write.offset+file->write.pos, 1, buf);
-		free(buf);
-	}
-	return 512*size+file->lastSize;
 }
