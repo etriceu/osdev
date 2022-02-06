@@ -23,11 +23,7 @@ extern void kernelMain()
 	uint32_t end = *((uint32_t*)(buf+509)) & 0x00ffffff;//read the end of myfs
 	free(buf);
 	
-	struct mount *mnt = mount(PRIMARY_MASTER, 1, end);
-	if(findFile(mnt, "kernel.bin"))
-		print("yeah!\n");
-	else
-		print("bruh\n");
+	mount(PRIMARY_MASTER, 1, end);
 	
 	const int cmdSize = 32;
 	char cmd[cmdSize];

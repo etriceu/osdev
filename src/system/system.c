@@ -3,6 +3,7 @@
 #include "../include/malloc.h"
 #include "../include/myfs.h"
 #include "../include/ata.h"
+#include "../include/exec.h"
 
 uint8_t checkMnt()
 {
@@ -131,8 +132,32 @@ void system(const char *cmd)
 		if(checkMnt())
 			umount(getMountPoints());
 	}
+	else if(strcmp(cmd2, "run"))
+	{
+		if(argc == 1)
+		{
+			if(checkMnt())
+			{
+				struct node *nod = findFile(getMountPoints(), args[0]);
+				if(nod)
+				{
+					uint64_t size;
+					struct file* file = fopen(nod, &size, MYFS_READ);
+					uint8_t *code = malloc(size);
+					fread(file, size, code);
+					fclose(file);
+					elfRun(code);
+					free(code);
+				}
+				else
+					print("File not found.\n");
+			}
+		}
+		else
+			print("run [fileName]\n");
+	}
 	else
-		print("commands:\nexit, clear, newfile, rm, ls, format, mount, umount, rename\n");
+		print("commands:\nexit, clear, newfile, rm, ls, format, mount, umount, rename, run\n");
 	
 	if(argc)
 		free(args);
