@@ -51,20 +51,6 @@ struct ElfPhdr
 	uint32_t align;
 };
 
-struct ElfShdr
-{
-	uint32_t name;
-	uint32_t type;
-	uint32_t flags;
-	uint32_t addr;
-	uint32_t offset;
-	uint32_t size;
-	uint32_t link;
-	uint32_t info;
-	uint32_t align;
-	uint32_t entsize;
-};
-
-int elfRun(uint8_t *buf);
+int elfRun(uint8_t *buf, int argc, char** argv);
 
 #endif // EXEC_H_INCLUDED

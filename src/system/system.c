@@ -134,7 +134,7 @@ void system(const char *cmd)
 	}
 	else if(strcmp(cmd2, "run"))
 	{
-		if(argc == 1)
+		if(argc >= 1)
 		{
 			if(checkMnt())
 			{
@@ -146,7 +146,7 @@ void system(const char *cmd)
 					uint8_t *code = malloc(size);
 					fread(file, size, code);
 					fclose(file);
-					elfRun(code);
+					elfRun(code, argc, args);
 					free(code);
 				}
 				else
@@ -154,7 +154,7 @@ void system(const char *cmd)
 			}
 		}
 		else
-			print("run [fileName]\n");
+			print("run [fileName] [args...]\n");
 	}
 	else
 		print("commands:\nexit, clear, newfile, rm, ls, format, mount, umount, rename, run\n");

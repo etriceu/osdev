@@ -31,7 +31,7 @@ uint8_t elfCompatibility(uint8_t *buf)
 	return 1;
 }
 
-int elfRun(uint8_t *buf)
+int elfRun(uint8_t *buf, int argc, char** argv)
 {
 	if(!isElf(buf) | !elfCompatibility(buf))
 		return -1;
@@ -51,8 +51,8 @@ int elfRun(uint8_t *buf)
 			for(size_t x = 0; x < phdr[n].filesz; x++)
 				proc[x+phdr[n].vaddr] = buf[x+phdr[n].offset];
 	
-	int (*run)() = (int (*)())(proc+0x1000);
-	int ret = (*run)();
+	int (*run)(int, char**) = (int (*)(int, char**))(proc+0x1000);
+	int ret = (*run)(argc, argv);
 	free(proc);
 	return ret;
 }
