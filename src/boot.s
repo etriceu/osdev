@@ -32,7 +32,9 @@ protMode:
 	mov %ax, %fs
 	mov %ax, %gs
 	call kernelMain
+halt:
 	hlt
+	jmp halt
 	
 .p2align 2
 gdt:

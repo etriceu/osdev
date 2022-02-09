@@ -1,6 +1,7 @@
 #include "../include/idt.h"
 #include "../include/isr.h"
 #include "../include/malloc.h"
+#include "../include/functions.h"
 
 IDT idt[256];
 IDTRegister idtReg;
@@ -48,6 +49,9 @@ void idtInit()
 	setIDT(29, (uint32_t)isr29);
 	setIDT(30, (uint32_t)isr30);
 	setIDT(31, (uint32_t)isr31);
+	
+	setIDT(32, (uint32_t)irqTimer);
+	setIDT(33, (uint32_t)irqKbd);
 	
 	setIDT(128, (uint32_t)int128);
 	

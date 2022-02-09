@@ -48,4 +48,7 @@ extern void isr31();
 
 extern void int128();
 
+extern void irqTimer();
+extern void irqKbd();
+
 #endif // ISR_H_INCLUDED

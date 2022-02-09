@@ -13,10 +13,10 @@ void f2(Registers reg){
 
 //keyboard
 void f3(Registers reg){
-	*((uint8_t*)reg.ecx) = isKeyEvent();
+	*((uint8_t*)reg.ecx) = pullKeys();
 }
 void f4(Registers reg){
-	*((uint8_t*)reg.ecx) = getKey();
+	*((uint8_t*)reg.ecx) = keyID(reg.esi);
 }
 void f5(Registers reg){
 	*((int8_t*)reg.ecx) = getKeyStatus(reg.esi);
@@ -124,11 +124,19 @@ void f35(Registers reg){
 	system((const char*)reg.esi);
 }
 
+//timer
+void f36(Registers reg){
+	*((int*)reg.ecx) = getTicks();
+}
+void f37(Registers reg){
+	sleep(reg.esi);
+}
+
 typedef void (*func)();
-func calls[36] = {	f0, f1, f2, f3, f4, f5, f6, f7, f8, f9,
+func calls[38] = {	f0, f1, f2, f3, f4, f5, f6, f7, f8, f9,
 					f10, f11, f12, f13, f14, f15, f16, f17, f18, f19,
 					f20, f21, f22, f23, f24, f25, f26, f27, f28, f29,
-					f30, f31, f32, f33, f34, f35};
+					f30, f31, f32, f33, f34, f35, f36, f37};
 
 void systemCall(Registers reg)
 {

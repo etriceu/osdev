@@ -1,6 +1,9 @@
 #include "../include/isr.h"
 #include "../include/screen.h"
 #include "../include/systemCall.h"
+#include "../include/irq.h"
+#include "../include/keyboard.h"
+#include "../include/timer.h"
 
 char *exceptions[] = {
 	"Divide by zero Error",
@@ -40,12 +43,23 @@ char *exceptions[] = {
 void isrHandler(Registers reg)
 {
 	if(reg.id == 128)
-	{
 		systemCall(reg);
-		return;
-	}
+	else if(reg.id >= 32)
+	{
+		if(reg.id == 32)
+			timer();
+		else if(reg.id == 33)
+			keyboard();
+			
+		if(reg.id >= 40)
+			out(0xa0, 0x20);
 	
-	print("\nISR: ");
-	print(exceptions[reg.id]);
-	print("\n");
+		out(0x20, 0x20);
+	}
+	else if(reg.id < 32)
+	{
+		print("\nISR: ");
+		print(exceptions[reg.id]);
+		print("\n");
+	}
 }

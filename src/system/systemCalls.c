@@ -24,11 +24,11 @@ uint32_t ataGetSize(uint8_t device){
 }
 
 //keyboard
-uint8_t isKeyEvent(){
+uint8_t pullKeys(){
 	return call(3, 0, 0, 0, 0);
 }
-uint8_t getKey(){
-	return call(4, 0, 0, 0, 0);
+uint8_t keyID(uint8_t key){
+	return call(4, key, 0, 0, 0);
 }
 int8_t getKeyStatus(uint8_t key){
 	return call(5, key, 0, 0, 0);
@@ -134,4 +134,12 @@ void setChar(int pos, char c, uint8_t s){
 //system
 void system(const char *cmd){
 	call(35, (uint32_t)cmd, 0, 0, 0);
+}
+
+//timer
+uint32_t getTicks(){
+	return call(36, 0, 0, 0, 0);
+}
+void sleep(uint32_t ms){
+	call(4, ms, 0, 0, 0);
 }

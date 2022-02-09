@@ -23,11 +23,17 @@ static const uint8_t keys[] = {
 	KEY_CAPSLOCK, KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7,
 	KEY_F8, KEY_F9, KEY_F10, KEY_NUMLOCK, KEY_SCROLLLOCK, 0, 0, 0, KEY_F11,
 	KEY_F12};
-
+	
 #define KEY_SIZE 0x80
-		
+#define KEY_CACHE 32
+	
 uint8_t isKeyEvent();
 uint8_t getKey();
 int8_t getKeyStatus(uint8_t key);
+void keyboard();
+uint8_t pullKeys();
+
+void translateKeyCodes();
+uint8_t keyID(uint8_t key);
 
 #endif // KEYBOARD_H_INCLUDED

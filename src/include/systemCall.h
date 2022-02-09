@@ -9,6 +9,7 @@
 #include "myfs.h"
 #include "screen.h"
 #include "system.h"
+#include "timer.h"
 
 void systemCall(Registers reg);
 

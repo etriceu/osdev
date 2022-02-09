@@ -214,3 +214,15 @@ int128:
 	push $0
 	push $128
 	jmp isr_common
+	
+.global irqTimer
+irqTimer:
+	push $0
+	push $32
+	jmp isr_common
+
+.global irqKbd
+irqKbd:
+	push $0
+	push $33
+	jmp isr_common

@@ -5,12 +5,19 @@
 #include "include/gdt.h"
 #include "include/idt.h"
 #include "include/systemCall.h"
+#include "include/irq.h"
+#include "include/timer.h"
 
 extern void kernelMain()
 {
 	memInit();
 	gdtInit();
 	idtInit();
+	irqInit();
+	timerInit();
+	irqEnable();
+	
+	translateKeyCodes();
 	
 	clear();
 	
@@ -31,9 +38,7 @@ extern void kernelMain()
 	
 	while(1)
 	{
-		if(isKeyEvent())
-		{
-			uint8_t key = getKey();
+		for(uint8_t key = pullKeys(); key != KEY_NONE; key = pullKeys())
 			if(getKeyStatus(key))
 			{
 				key = keys[key];
@@ -53,14 +58,19 @@ extern void kernelMain()
 				}
 				else if(key <= '~')
 				{
-					printn(&key, 1);
+					if((getKeyStatus(keyID(KEY_LSHIFT)) ||
+						getKeyStatus(keyID(KEY_RSHIFT))) &&
+						key >= 'a' && key <= 'z')
+						key -= 32;
+					
 					if(cmdi < cmdSize)
 					{
+						printn(&key, 1);
 						cmd[cmdi] = key;
 						cmdi++;
 					}
 				}
 			}
-		}
+		sleep(10);
 	}
 }
