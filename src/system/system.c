@@ -4,6 +4,7 @@
 #include "../include/myfs.h"
 #include "../include/ata.h"
 #include "../include/exec.h"
+#include "../include/irq.h"
 
 uint8_t checkMnt()
 {
@@ -50,6 +51,7 @@ void system(const char *cmd)
 	if(strcmp(cmd, "exit"))
 	{
 		print("Bye\n");
+		irqDisable();
 		asm volatile("hlt");
 	}
 	else if(strcmp(cmd, "clear"))

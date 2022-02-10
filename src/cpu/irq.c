@@ -19,3 +19,10 @@ void irqEnable()
 {
 	asm volatile("sti");
 }
+
+void irqDisable()
+{
+	out(0xA1, 0xff);
+	out(0x21, 0xff);
+	asm volatile("cli");
+}
