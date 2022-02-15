@@ -63,7 +63,7 @@ void system(const char *cmd)
 			if(argc == 1)
 				newFile(getMountPoints(), args[0]); // get first mnt
 			else
-				print("newfile [fileName]\n");print("3\n");
+				print("newfile [fileName]\n");
 		}
 	}
 	else if(strcmp(cmd2, "rename"))
