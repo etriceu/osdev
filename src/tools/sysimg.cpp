@@ -16,9 +16,10 @@ int main(int argc, char** argv)
 {
 	if(argc <= 2 || !strcmp(argv[0], "-h") || !strcmp(argv[0], "--help"))
 	{
-		printf("Usage: %s [KERNEL] [OUTPUT] [FILES]...\n", argv[0]);
+		printf("Usage: %s [KERNEL] [OUTPUT] [FREE_SPACE] [FILES]...\n", argv[0]);
 		printf("KERNEL - path to kernel.bin file\n");
 		printf("OUTPUT - output file\n");
+		printf("FREE_SPACE - number of free sectors at the end\n");
 		printf("FILES - additional files\n");
 		return 0;
 	}
@@ -62,7 +63,7 @@ int main(int argc, char** argv)
 	file.close();
 	
 	//add files
-	for(int a = 3; a < argc; a++)
+	for(int a = 4; a < argc; a++)
 	{
 		nodes.push_back(n);
 		file.open(argv[a], ios::in | ios::binary);
@@ -92,6 +93,10 @@ int main(int argc, char** argv)
 		writeZero(result, 512-file.gcount());
 		file.close();
 	}
+	
+	//add free space
+	for(int n = 0; n < atoi(argv[3]); n++)
+		writeZero(result, 512);
 	
 	//add nodes
 	writeZero(result, 512);

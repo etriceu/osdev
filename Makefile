@@ -26,7 +26,7 @@ helloworld:
 userSoft: $(userObj) $(userSoftware)
 
 myos.img: myos.bin sysimg userSoft
-	./sysimg myos.bin myos.img $(userSoftware)
+	./sysimg myos.bin myos.img 10 $(userSoftware)
 	
 all: myos.img
 
@@ -38,3 +38,4 @@ clean:
 	rm -f *.img
 	rm -f *.bin
 	rm -f $(userSoftware)
+	rm -f sysimg
