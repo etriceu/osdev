@@ -35,42 +35,43 @@ extern void kernelMain()
 	const int cmdSize = 32;
 	char cmd[cmdSize];
 	int cmdi = 0;
-	
+
 	while(1)
 	{
 		for(uint8_t key = pullKeys(); key != KEY_NONE; key = pullKeys())
-			if(getKeyStatus(key))
-			{
+		{
+			if(key < KEY_SPECIAL)
 				key = keys[key];
-				if(key == KEY_ENTER)
+
+			if(key == KEY_ENTER)
+			{
+				print("\n");
+				cmd[cmdi] = '\0';
+				cmdi = 0;
+				system(cmd);
+			}
+			else if(key == KEY_BACKSPACE && cmdi > 0)
+			{
+				cmdi--;
+				moveCursor(getCursorPos()-1);
+				setChar(getCursorPos(), 0, getStyle());
+				cmd[cmdi] = 0;
+			}
+			else if(key <= '~')
+			{
+				if((getKeyStatus(keyID(KEY_LSHIFT)) ||
+					getKeyStatus(keyID(KEY_RSHIFT))) &&
+					key >= 'a' && key <= 'z')
+					key -= 32;
+				
+				if(cmdi < cmdSize)
 				{
-					print("\n");
-					cmd[cmdi] = '\0';
-					cmdi = 0;
-					system(cmd);
-				}
-				else if(key == KEY_BACKSPACE && cmdi > 0)
-				{
-					cmdi--;
-					moveCursor(getCursorPos()-1);
-					setChar(getCursorPos(), 0, getStyle());
-					cmd[cmdi] = 0;
-				}
-				else if(key <= '~')
-				{
-					if((getKeyStatus(keyID(KEY_LSHIFT)) ||
-						getKeyStatus(keyID(KEY_RSHIFT))) &&
-						key >= 'a' && key <= 'z')
-						key -= 32;
-					
-					if(cmdi < cmdSize)
-					{
-						printn(&key, 1);
-						cmd[cmdi] = key;
-						cmdi++;
-					}
+					printn(&key, 1);
+					cmd[cmdi] = key;
+					cmdi++;
 				}
 			}
+		}
 		sleep(10);
 	}
 }

@@ -14,11 +14,30 @@ uint8_t isKeyEvent()
 uint8_t getKey()
 {
 	uint8_t key = in(0x60);
-	if(key >= 0xE0)
-		return KEY_SPECIAL;
-	else if(key > KEY_SIZE)
+	
+	if(key >= KEY_SPECIAL_ID)
 	{
-		key -= KEY_SIZE;
+		key = in(0x60);
+		uint8_t skey = 0, status = KEY_PRESSED;
+		if(key > KEY_PRE_REL)
+		{
+			key -= KEY_PRE_REL;
+			status = KEY_RELEASED;
+		}
+		
+		for(int n = 0; n < sizeof(specialKeys)/sizeof(specialKeys[0]); n++)
+			if(key == specialKeys[n].id)
+			{
+				skey = specialKeys[n].key;
+				keyStatus[skey] = status;
+				break;
+			}
+		//skey = 0;
+		return skey ? skey : KEY_SPECIAL;
+	}
+	else if(key > KEY_PRE_REL)
+	{
+		key -= KEY_PRE_REL;
 		keyStatus[key] = KEY_RELEASED;
 	}
 	else
