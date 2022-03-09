@@ -2,14 +2,11 @@
 
 uint32_t call(uint32_t id, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
 {
-	asm volatile("mov %0, %%edi;" :: "a" (id) : "%edi");
-	asm volatile("mov %0, %%esi;" :: "a" (a) : "%esi");
-	asm volatile("mov %0, %%ebp;" :: "a" (b) : "%ebp");
-	asm volatile("mov %0, %%ebx;" :: "a" (c) : "%ebx");
-	asm volatile("mov %0, %%edx;" :: "a" (d) : "%edx");
-	asm volatile("mov %0, %%ecx;" :: "a" (&id) : "%ecx");
+	uint32_t ret = 0;
+	uint32_t args[] = {id, (uint32_t)&ret, a, b, c, d};
+	asm volatile("mov %0, %%ebx;" :: "a" (args) : "%ebx");
 	asm volatile("int $128");
-	return id;
+	return ret;
 }
 
 //ata

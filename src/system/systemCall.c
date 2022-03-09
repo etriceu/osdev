@@ -1,135 +1,135 @@
 #include "../include/systemCall.h"
 
 //ata
-void f0(Registers reg){
-	ataRead(reg.esi, reg.ebp, reg.ebx, (uint8_t*)reg.edx);
+void f0(uint32_t *p){
+	ataRead(p[1], p[2], p[3], (uint8_t*)p[4]);
 }
-void f1(Registers reg){
-	ataWrite(reg.esi, reg.ebp, reg.ebx, (uint8_t*)reg.edx);
+void f1(uint32_t *p){
+	ataWrite(p[1], p[2], p[3], (uint8_t*)p[4]);
 }
-void f2(Registers reg){
-	*((uint32_t*)reg.ecx) = ataGetSize(reg.esi);
+void f2(uint32_t *p){
+	*((uint32_t*)p[0]) = ataGetSize(p[1]);
 }
 
 //keyboard
-void f3(Registers reg){
-	*((uint8_t*)reg.ecx) = pullKeys();
+void f3(uint32_t *p){
+	*((uint8_t*)p[0]) = pullKeys();
 }
-void f4(Registers reg){
-	*((uint8_t*)reg.ecx) = keyID(reg.esi);
+void f4(uint32_t *p){
+	*((uint8_t*)p[0]) = keyID(p[1]);
 }
-void f5(Registers reg){
-	*((int8_t*)reg.ecx) = getKeyStatus(reg.esi);
+void f5(uint32_t *p){
+	*((int8_t*)p[0]) = getKeyStatus(p[1]);
 }
 
 //malloc
-void f6(Registers reg){
-	*((uint8_t**)reg.ecx) = malloc(reg.esi);
+void f6(uint32_t *p){
+	*((uint8_t**)p[0]) = malloc(p[1]);
 }
-void f7(Registers reg){
-	free((uint8_t*)reg.esi);
+void f7(uint32_t *p){
+	free((uint8_t*)p[1]);
 }
 
 //myfs
-void f8(Registers reg){
-	*((struct mount**)reg.ecx) = getMountPoints();
+void f8(uint32_t *p){
+	*((struct mount**)p[0]) = getMountPoints();
 }
-void f9(Registers reg){
-	*((struct mount**)reg.ecx) = mount(reg.esi, reg.ebp, reg.ebx);
+void f9(uint32_t *p){
+	*((struct mount**)p[0]) = mount(p[1], p[2], p[3]);
 }
-void f10(Registers reg){
-	umount((struct mount*)reg.esi);
-}
-
-void f11(Registers reg){
-	*((struct node**)reg.ecx) = newFile((struct mount*)reg.esi, (const char*)reg.ebp);
-}
-void f12(Registers reg){
-	getFileName((struct node*)reg.esi, (char*)reg.ebp);
-}
-void f13(Registers reg){
-	*((struct node**)reg.ecx) = findFile((struct mount*)reg.esi, (const char*)reg.ebp);
-}
-void f14(Registers reg){
-	removeFile((struct node*)reg.esi);
-}
-void f15(Registers reg){
-	renameFile((struct node*)reg.esi, (const char*)reg.ebp);
+void f10(uint32_t *p){
+	umount((struct mount*)p[1]);
 }
 
-void f16(Registers reg){
-	*((struct file**)reg.ecx) = fopen((struct node*)reg.esi, (uint64_t*)reg.ebp, reg.ebx);
+void f11(uint32_t *p){
+	*((struct node**)p[0]) = newFile((struct mount*)p[1], (const char*)p[2]);
 }
-void f17(Registers reg){
-	fclose((struct file*)reg.esi);
+void f12(uint32_t *p){
+	getFileName((struct node*)p[1], (char*)p[2]);
 }
-void f18(Registers reg){
-	*((uint8_t*)reg.ecx) = fread((struct file*)reg.esi, reg.ebp, (uint8_t*)reg.ebx);
+void f13(uint32_t *p){
+	*((struct node**)p[0]) = findFile((struct mount*)p[1], (const char*)p[2]);
 }
-void f19(Registers reg){
-	fwrite((struct file*)reg.esi, reg.ebp, (uint8_t*)reg.ebx);
+void f14(uint32_t *p){
+	removeFile((struct node*)p[1]);
 }
-void f20(Registers reg){
-	fflush((struct file*)reg.esi);
+void f15(uint32_t *p){
+	renameFile((struct node*)p[1], (const char*)p[2]);
+}
+
+void f16(uint32_t *p){
+	*((struct file**)p[0]) = fopen((struct node*)p[1], (uint64_t*)p[2], p[3]);
+}
+void f17(uint32_t *p){
+	fclose((struct file*)p[1]);
+}
+void f18(uint32_t *p){
+	*((uint8_t*)p[0]) = fread((struct file*)p[1], p[2], (uint8_t*)p[3]);
+}
+void f19(uint32_t *p){
+	fwrite((struct file*)p[1], p[2], (uint8_t*)p[3]);
+}
+void f20(uint32_t *p){
+	fflush((struct file*)p[1]);
 }
 
 //screen
-void f21(Registers reg){
-	setStyle(reg.esi);
+void f21(uint32_t *p){
+	setStyle(p[1]);
 }
-void f22(Registers reg){
-	*((uint8_t*)reg.ecx) = getStyle();
+void f22(uint32_t *p){
+	*((uint8_t*)p[0]) = getStyle();
 }
-void f23(Registers reg){
-	*((unsigned int*)reg.ecx) = getWidth();
+void f23(uint32_t *p){
+	*((unsigned int*)p[0]) = getWidth();
 }
-void f24(Registers reg){
-	*((unsigned int*)reg.ecx) = getHeight();
+void f24(uint32_t *p){
+	*((unsigned int*)p[0]) = getHeight();
 }
 
-void f25(Registers reg){
-	*((uint8_t*)reg.ecx) = isCursor();
+void f25(uint32_t *p){
+	*((uint8_t*)p[0]) = isCursor();
 }
-void f26(Registers reg){
+void f26(uint32_t *p){
 	disableCursor();
 }
-void f27(Registers reg){
-	enableCursor(reg.esi, reg.ebp);
+void f27(uint32_t *p){
+	enableCursor(p[1], p[2]);
 }
-void f28(Registers reg){
-	moveCursor(reg.esi);
+void f28(uint32_t *p){
+	moveCursor(p[1]);
 }
-void f29(Registers reg){
-	*((int*)reg.ecx) = getCursorPos();
+void f29(uint32_t *p){
+	*((int*)p[0]) = getCursorPos();
 }
 
-void f30(Registers reg){
+void f30(uint32_t *p){
 	clear();
 }
-void f31(Registers reg){
-	print((const char*)reg.esi);
+void f31(uint32_t *p){
+	print((const char*)p[1]);
 }
-void f32(Registers reg){
-	printn((const char*)reg.esi, reg.ebp);
+void f32(uint32_t *p){
+	printn((const char*)p[1], p[2]);
 }
-void f33(Registers reg){
-	printRaw((const uint16_t*)reg.esi, reg.ebp);
+void f33(uint32_t *p){
+	printRaw((const uint16_t*)p[1], p[2]);
 }
-void f34(Registers reg){
-	setChar(reg.esi, reg.ebp, reg.ebx);
+void f34(uint32_t *p){
+	setChar(p[1], p[2], p[3]);
 }
 
 //system
-void f35(Registers reg){
-	system((const char*)reg.esi);
+void f35(uint32_t *p){
+	system((const char*)p[1]);
 }
 
 //timer
-void f36(Registers reg){
-	*((int*)reg.ecx) = getTicks();
+void f36(uint32_t *p){
+	*((int*)p[0]) = getTicks();
 }
-void f37(Registers reg){
-	sleep(reg.esi);
+void f37(uint32_t *p){
+	sleep(p[1]);
 }
 
 typedef void (*func)();
@@ -140,10 +140,12 @@ func calls[38] = {	f0, f1, f2, f3, f4, f5, f6, f7, f8, f9,
 
 void systemCall(Registers reg)
 {
-	if(reg.edi < 0 || reg.edi >= sizeof(calls)/sizeof(calls[0]))
+	uint32_t *args = (uint32_t*)reg.ebx;
+	uint32_t id = args[0];
+	if(id < 0 || id >= sizeof(calls)/sizeof(calls[0]))
 	{
 		print("Invalid system call.\n");
 		return;
 	}
-	calls[reg.edi](reg);
+	calls[id](&args[1]);
 }
