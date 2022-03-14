@@ -1,5 +1,15 @@
 #include "../include/systemCall.h"
 
+struct
+{
+	char key;
+	char shift;
+} keyMap[] = {
+	{'`', '~'}, {'1', '!'}, {'2', '@'}, {'3', '#'}, {'4', '$'}, {'5', '%'},
+	{'6', '^'}, {'7', '&'}, {'8', '*'}, {'9', '('}, {'0', ')'}, {'-', '_'},
+	{'=', '+'}, {'[', '{'}, {']', '}'}, {';', ':'}, {'\'', '"'}, {'\\', '|'},
+	{',', '<'}, {'.', '>'}, {'/', '?'}};
+
 uint32_t width, height;
 
 void printNum(int num)
@@ -188,10 +198,19 @@ int main(int argc, char** argv)
 				}
 				else if(key <= '~')
 				{
-					if((getKeyStatus(keyID(KEY_LSHIFT)) ||
-						getKeyStatus(keyID(KEY_RSHIFT))) &&
-						key >= 'a' && key <= 'z')
-						key -= 32;
+					if(getKeyStatus(keyID(KEY_LSHIFT)) ||
+						getKeyStatus(keyID(KEY_RSHIFT)))
+					{
+						if(key >= 'a' && key <= 'z')
+							key -= 32;
+						else
+							for(int n = 0; n < sizeof(keyMap)/sizeof(keyMap[0]); n++)
+								if(keyMap[n].key == key)
+								{
+									key = keyMap[n].shift;
+									break;
+								}
+					}
 					
 					for(int n = width-1; n > col; n--)
 						lines[row][n] = lines[row][n-1];
