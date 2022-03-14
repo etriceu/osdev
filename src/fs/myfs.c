@@ -313,18 +313,22 @@ struct file* fopen(struct node* nod, uint64_t *sizeOut, uint8_t mode)
 	
 	
 	uint8_t *buf = malloc(512);
-	uint32_t size, pos = file->lba;
+	uint32_t size = 0, pos = file->lba;
 	do
 	{
 		ataRead(mnt->device, pos, 1, buf);
 		file->write.offset = pos+1;
-		size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
-		size--;
+		uint32_t s = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
+		if(s != 0)
+			size += s-1;
 		pos = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
 	} while(pos);
 	
+	if(size != 0)
+		size--;
+	
 	if(sizeOut)
-		*sizeOut = 512*(size-1)+file->lastSize;
+		*sizeOut = 512*(size)+file->lastSize;
 	
 	if(mode)
 	{
