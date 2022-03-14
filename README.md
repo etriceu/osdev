@@ -2,14 +2,18 @@
 Simple operating system for x86 architecture.
 
 # Supports
-Video: 80x25 color text mode
-
-Disk: ATA PIO 24bit
-
-Keyboard: PS2 US QWERTY
+* Video: 80x25 color text mode
+* Disk: ATA PIO 24bit
+* Keyboard: PS2 US QWERTY
 
 # Features
-32bit, ISR, memory manager, own file system
+* 32 bit Protected Mode
+* ISR
+* Memory manager
+* Own file system
+* ELF exec
+* System calls
+* User software
 
 # Build & run
 ```
@@ -21,7 +25,7 @@ qemu-system-x86_64 -hda myos.img -m 1024
 
 #.img
 #./sysimg -h #manual
-./sysimg myos.bin myos.img #[additional files/programs]
+./sysimg myos.bin myos.img 10 #[additional files/programs]
 
 #.iso (only bootable kernel)
 mkdir iso
