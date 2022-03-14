@@ -222,7 +222,7 @@ int main(int argc, char** argv)
 		{
 			clear();
 			print(argv[1]);
-			print("; "); printNum(row); print("; "); printNum(lines[row][col]);
+			print("; "); printNum(row); print("; "); printNum(col);
 			print("; Ctrl + s to save; Ctrl + x to exit;\n");
 			for(uint32_t n = offset; n < num && n < offset+height-2; n++)
 				printn(lines[n], width);
