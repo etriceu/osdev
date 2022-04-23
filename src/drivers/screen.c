@@ -1,32 +1,22 @@
 #include "../include/screen.h"
 #include "../include/functions.h"
 
-uint8_t textStyle = FG_GREY | BG_BLACK;
-unsigned int textPosition = 0;
-uint16_t* videoMemory = (uint16_t*)0xb8000;
-unsigned int textWidth = 80;
-unsigned int textHeight = 25;
+#define VIDEO_BEG (uint16_t*)0xB8000
+#define VIDEO_SIZE VIDEO_WIDTH*VIDEO_HEIGHT
+#define VIDEO_END VIDEO_BEG+VIDEO_SIZE
 
-int8_t cursor = 1;
+static uint16_t textStyle = FG_GREY | BG_BLACK;
+static uint16_t *current = VIDEO_BEG;
+static int8_t cursor = 1;
 
 void setStyle(uint16_t s)
 {
-	textStyle = s;
+	textStyle = s & 0xFF00;
 }
 
-uint8_t getStyle()
+uint16_t getStyle()
 {
 	return textStyle;
-}
-
-unsigned int getWidth()
-{
-	return textWidth;
-}
-
-unsigned int getHeight()
-{
-	return textHeight;
 }
 
 int8_t isCursor()
@@ -56,82 +46,66 @@ void moveCursor(int pos)
 	out(0x3D5, (uint8_t) (pos & 0xFF));
 	out(0x3D4, 0x0E);
 	out(0x3D5, (uint8_t) ((pos >> 8) & 0xFF));
-	textPosition = pos;
+	current = VIDEO_BEG+pos;
 }
 
 int getCursorPos()
 {
-	return textPosition;
+	return current-VIDEO_BEG;
 }
 
 void clear()
 {
-	for(int n = 0; n < textWidth*textHeight; n++)
-		videoMemory[n] = (textStyle | 0x0000)<<8;
-	
+	for(current = VIDEO_BEG; current < VIDEO_END; current++)
+		*current = textStyle;
+
 	moveCursor(0);
 }
 
-void _print()
+void _print(uint16_t sc)
 {
-	int size = textWidth*textHeight;
-	if(textPosition >= size)
+	if(current >= VIDEO_END)
 	{
-		int n = 0;
-		for(; n < size-textWidth; n++)
-			videoMemory[n] = videoMemory[n+textWidth];
+		for(current = VIDEO_BEG; current < VIDEO_END-VIDEO_WIDTH; current++)
+			*current = *(current+VIDEO_WIDTH);
 		
-		for(; n < size; n++)
-			videoMemory[n] = (textStyle | 0x0000)<<8;
+		for(; current < VIDEO_END; current++)
+			*current = textStyle;
 		
-		textPosition -= textWidth;
+		current -= VIDEO_WIDTH;
 	}
-	
-	if(cursor)
-		moveCursor(textPosition);
+	if((sc & 0x00FF) == '\n')
+		current = VIDEO_BEG+((current-VIDEO_BEG)/VIDEO_WIDTH+1)*VIDEO_WIDTH-1;
+	else
+		*current = sc;
 }
 
 void print(const char *str)
 {
-	for(; *str != '\0'; str++, textPosition++)
-	{
-		_print();
-		if(*str == '\n')
-			textPosition = (textPosition/textWidth+1)*textWidth-1;
-		else
-			videoMemory[textPosition] = (textStyle | 0x0000)<<8 | *str;
-	}
-	_print();
+	for(; *str != '\0'; str++, current++)
+		_print(textStyle | *str);
+	
+	moveCursor(current-VIDEO_BEG);
 }
 
 void printn(const char *str, size_t size)
 {
-	for(int end = textPosition+size; textPosition < end; str++, textPosition++)
-	{
-		_print();
-		if(*str == '\n')
-			textPosition = (textPosition/textWidth+1)*textWidth-1;
-		else
-			videoMemory[textPosition] = (textStyle | 0x0000)<<8 | *str;
-	}
-	_print();
+	for(const char *end = str+size; str < end; str++, current++)
+		_print(textStyle | *str);
+	
+	moveCursor(current-VIDEO_BEG);
 }
 
 void printRaw(const uint16_t *str, size_t size)
 {
-	for(int end = textPosition+size; textPosition < end; str++, textPosition++)
-	{
-		_print();
-		if((*str & 0x00ff) == '\n')
-			textPosition = (textPosition/textWidth+1)*textWidth-1;
-		else
-			videoMemory[textPosition] = *str;
-	}
-	_print();
+	for(const uint16_t *end = str+size; str < end; str++, current++)
+		_print(*str);
+	
+	moveCursor(current-VIDEO_BEG);
 }
 
 void setChar(int pos, char c, uint8_t s)
 {
-	if(pos < textWidth*textHeight)
-		videoMemory[pos] = (s | 0x0000)<<8 | c;
+	if(pos < VIDEO_WIDTH*VIDEO_HEIGHT)
+		*((uint16_t*)VIDEO_BEG+pos) = s | c;
 }

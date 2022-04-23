@@ -10,8 +10,6 @@ struct
 	{'=', '+'}, {'[', '{'}, {']', '}'}, {';', ':'}, {'\'', '"'}, {'\\', '|'},
 	{',', '<'}, {'.', '>'}, {'/', '?'}};
 
-uint32_t width, height;
-
 void printNum(int num)
 {
 	if(num < 0)
@@ -30,7 +28,7 @@ void printNum(int num)
 int strlen(char *str)
 {
 	int n = 0;
-	for(; n < width && str[n] != '\0'; n++);
+	for(; n < VIDEO_WIDTH && str[n] != '\0'; n++);
 	return n;
 }
 
@@ -41,7 +39,7 @@ void newLine(char ***lines, uint32_t *size, int row)
 	for(int n = 0; n < row; n++)
 		tmp[n] = (*lines)[n];
 	
-	tmp[row] = malloc(width);
+	tmp[row] = malloc(VIDEO_WIDTH);
 	
 	for(int n = row+1; n < *size; n++)
 		tmp[n] = (*lines)[n-1];
@@ -92,9 +90,6 @@ int main(int argc, char** argv)
 		print("File not found.\n");
 		return 1;
 	}
-
-	width = getWidth();
-	height = getHeight();
 	
 	char **lines = NULL;
 	uint32_t num = 0;
@@ -109,7 +104,7 @@ int main(int argc, char** argv)
 	newLine(&lines, &num, 0);
 
 	for(uint32_t a = 0, b = 0, c = 0; a < size; a++, c++)
-		if(c >= width-1 || buf[a] == '\n')
+		if(c >= VIDEO_WIDTH-1 || buf[a] == '\n')
 		{
 			c = -1;
 			b++;
@@ -120,6 +115,7 @@ int main(int argc, char** argv)
 
 	free(buf);
 	uint8_t quit = 0, refresh = 1;
+	
 	while(!quit)
 	{
 		for(uint8_t key = pullKeys(); key != KEY_NONE; key = pullKeys())
@@ -137,7 +133,7 @@ int main(int argc, char** argv)
 					
 					for(int y = 0; y < num; y++)
 					{
-						for(int x = 0; x < width && lines[y][x] != '\0'; x++)
+						for(int x = 0; x < VIDEO_WIDTH && lines[y][x] != '\0'; x++)
 							fwrite(file, 1, &lines[y][x]);
 						fwrite(file, 1, "\n");
 					}
@@ -170,17 +166,17 @@ int main(int argc, char** argv)
 					else if(key == KEY_BACKSPACE)
 					{
 						int n = col+1;
-						for(; n < width-1 && lines[row][n] != '\0'; n++)
+						for(; n < VIDEO_WIDTH-1 && lines[row][n] != '\0'; n++)
 							lines[row][n-1] = lines[row][n];
 						
 						lines[row][n-1] = '\0';
 					}
 				}
 				else if(key == KEY_RIGHT && (row < num-1 ||
-					(row == num-1 && col < width-1 && lines[row][col] != '\0')))
+					(row == num-1 && col < VIDEO_WIDTH-1 && lines[row][col] != '\0')))
 				{
 					col++;
-					if((col >= width || lines[row][col-1] == '\0') && row < num-1)
+					if((col >= VIDEO_WIDTH || lines[row][col-1] == '\0') && row < num-1)
 					{
 						col = 0;
 						row++;
@@ -212,16 +208,16 @@ int main(int argc, char** argv)
 								}
 					}
 					
-					for(int n = width-1; n > col; n--)
+					for(int n = VIDEO_WIDTH-1; n > col; n--)
 						lines[row][n] = lines[row][n-1];
 					
 					lines[row][col] = key;
 					col++;
-					if(key == '\0' || col >= width-1)
+					if(key == '\0' || col >= VIDEO_WIDTH-1)
 					{
 						row++;
 						newLine(&lines, &num, row);
-						for(int n = 0; n < width-col; n++)
+						for(int n = 0; n < VIDEO_WIDTH-col; n++)
 						{
 							lines[row][n] = lines[row-1][n+col];
 							lines[row-1][n+col] = '\0';
@@ -231,7 +227,7 @@ int main(int argc, char** argv)
 					}
 				}
 				
-				if(row > offset+height-3) offset++;
+				if(row > offset+VIDEO_HEIGHT-3) offset++;
 				else if(row < offset) offset--;
 				
 				refresh = 1;
@@ -243,11 +239,11 @@ int main(int argc, char** argv)
 			print(argv[1]);
 			print("; "); printNum(row); print("; "); printNum(col);
 			print("; Ctrl + s to save; Ctrl + x to exit;\n");
-			for(uint32_t n = offset; n < num && n < offset+height-2; n++)
-				printn(lines[n], width);
+			for(uint32_t n = offset; n < num && n < offset+VIDEO_HEIGHT-2; n++)
+				printn(lines[n], VIDEO_WIDTH);
 			
 			refresh = 0;
-			moveCursor(width*(row+1-offset)+col);
+			moveCursor(VIDEO_WIDTH*(row+1-offset)+col);
 		}
 		sleep(10);
 	}

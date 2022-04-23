@@ -86,57 +86,51 @@ void fflush(struct file *file){
 void setStyle(uint16_t s){
 	call(21, s, 0, 0, 0);
 }
-uint8_t getStyle(){
+uint16_t getStyle(){
 	return call(22, 0, 0, 0, 0);
-}
-unsigned int getWidth(){
-	return call(23, 0, 0, 0, 0);
-}
-unsigned int getHeight(){
-	return call(24, 0, 0, 0, 0);
 }
 
 int8_t isCursor(){
-	return call(25, 0, 0, 0, 0);
+	return call(23, 0, 0, 0, 0);
 }
 void disableCursor(){
-	call(26, 0, 0, 0, 0);
+	call(24, 0, 0, 0, 0);
 }
 void enableCursor(uint8_t start, uint8_t end){
-	call(27, start, end, 0, 0);
+	call(25, start, end, 0, 0);
 }
 void moveCursor(int pos){
-	call(28, pos, 0, 0, 0);
+	call(26, pos, 0, 0, 0);
 }
 int getCursorPos(){
-	return call(29, 0, 0, 0, 0);
+	return call(27, 0, 0, 0, 0);
 }
 
 void clear(){
-	call(30, 0, 0, 0, 0);
+	call(28, 0, 0, 0, 0);
 }
 void print(const char *str){
-	call(31, (uint32_t)str, 0, 0, 0);
+	call(29, (uint32_t)str, 0, 0, 0);
 }
 void printn(const char *str, size_t size){
-	call(32, (uint32_t)str, size, 0, 0);
+	call(30, (uint32_t)str, size, 0, 0);
 }
 void printRaw(const uint16_t *str, size_t size){
-	call(33, (uint32_t)str, size, 0, 0);
+	call(31, (uint32_t)str, size, 0, 0);
 }
 void setChar(int pos, char c, uint8_t s){
-	call(34, pos, c, s, 0);
+	call(32, pos, c, s, 0);
 }
 
 //system
 void system(const char *cmd){
-	call(35, (uint32_t)cmd, 0, 0, 0);
+	call(33, (uint32_t)cmd, 0, 0, 0);
 }
 
 //timer
 uint32_t getTicks(){
-	return call(36, 0, 0, 0, 0);
+	return call(34, 0, 0, 0, 0);
 }
 void sleep(uint32_t ms){
-	call(4, ms, 0, 0, 0);
+	call(35, ms, 0, 0, 0);
 }

@@ -78,65 +78,59 @@ void f21(uint32_t *p){
 	setStyle(p[1]);
 }
 void f22(uint32_t *p){
-	*((uint8_t*)p[0]) = getStyle();
-}
-void f23(uint32_t *p){
-	*((unsigned int*)p[0]) = getWidth();
-}
-void f24(uint32_t *p){
-	*((unsigned int*)p[0]) = getHeight();
+	*((uint16_t*)p[0]) = getStyle();
 }
 
-void f25(uint32_t *p){
+void f23(uint32_t *p){
 	*((uint8_t*)p[0]) = isCursor();
 }
-void f26(uint32_t *p){
+void f24(uint32_t *p){
 	disableCursor();
 }
-void f27(uint32_t *p){
+void f25(uint32_t *p){
 	enableCursor(p[1], p[2]);
 }
-void f28(uint32_t *p){
+void f26(uint32_t *p){
 	moveCursor(p[1]);
 }
-void f29(uint32_t *p){
+void f27(uint32_t *p){
 	*((int*)p[0]) = getCursorPos();
 }
 
-void f30(uint32_t *p){
+void f28(uint32_t *p){
 	clear();
 }
-void f31(uint32_t *p){
+void f29(uint32_t *p){
 	print((const char*)p[1]);
 }
-void f32(uint32_t *p){
+void f30(uint32_t *p){
 	printn((const char*)p[1], p[2]);
 }
-void f33(uint32_t *p){
+void f31(uint32_t *p){
 	printRaw((const uint16_t*)p[1], p[2]);
 }
-void f34(uint32_t *p){
+void f32(uint32_t *p){
 	setChar(p[1], p[2], p[3]);
 }
 
 //system
-void f35(uint32_t *p){
+void f33(uint32_t *p){
 	system((const char*)p[1]);
 }
 
 //timer
-void f36(uint32_t *p){
+void f34(uint32_t *p){
 	*((int*)p[0]) = getTicks();
 }
-void f37(uint32_t *p){
+void f35(uint32_t *p){
 	sleep(p[1]);
 }
 
 typedef void (*func)();
-func calls[38] = {	f0, f1, f2, f3, f4, f5, f6, f7, f8, f9,
+func calls[36] = {	f0, f1, f2, f3, f4, f5, f6, f7, f8, f9,
 					f10, f11, f12, f13, f14, f15, f16, f17, f18, f19,
-					f20, f21, f22, f23, f24, f25, f26, f27, f28, f29,
-					f30, f31, f32, f33, f34, f35, f36, f37};
+					f20, f21, f22, f23, f24, f25, f26, f27,
+					f28, f29, f30, f31, f32, f33, f34, f35};
 
 void systemCall(Registers reg)
 {
