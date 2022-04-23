@@ -9,7 +9,7 @@ void timerInit()
 	out(0x40, divisor >> 8);
 }
 
-uint32_t ticks = 0;
+static uint32_t ticks = 0;
 
 void timer()
 {
@@ -23,7 +23,8 @@ uint32_t getTicks()
 
 void sleep(uint32_t s)
 {
-	uint32_t end = getTicks() + s*TIMER_FREQ/1000;
-	while(end > getTicks())
-		asm("nop");
+	uint32_t end = ticks + s*TIMER_FREQ/1000;
+	asm volatile("sti");
+	while(end > ticks)
+		asm volatile("hlt");
 }
