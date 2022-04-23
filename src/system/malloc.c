@@ -2,54 +2,60 @@
 
 #define SIZE sizeof(size_t)
 
-size_t ramBegin = 0x100000, ramEnd = 0x40000000; //idk how to check ram size
+#define RAM_BEG 0x100000
+#define RAM_END 0x40000000 //(1GB) //idk how to check ram size
 
-size_t last;
+static size_t *last = RAM_BEG;
 
 void memInit()
 {
-	for(int *n = (int*)ramBegin; n != (int*)ramEnd; n++)
+	for(size_t *n = (size_t*)RAM_BEG; n < (size_t*)RAM_END; n++)
 		*n = 0;
 }
 
 void* malloc(size_t size)
 {
+	if(size == 0)
+		return NULL;
+	
 	size_t s = 0;
+	int try = 0;
 	while(1)
 	{
-		if(last > ramEnd)
+		if(last >= RAM_END)
 		{
-			last = ramBegin+SIZE;
+			last = RAM_BEG;
 			s = 0;
+			if(++try > 3)
+				return NULL;
 		}
 		
-		if(*(uint8_t*)last == 0)
+		if(*(size_t*)last == 0)
 			s++;
 		else
 		{
 			s = 0;
-			last += *(size_t*)(last-SIZE)-1;
+			last += *(size_t*)last;
 		}
 		
-		if(s == size+SIZE)
+		if(s*SIZE >= size+SIZE)
 			break;
 
 		last++;
 	}
-	last -= s-1;
-	*(size_t*)last = size;
-	last += SIZE;
-	void *ptr = (void*)last;
-	last += size;
+	s--;
+	last -= s;
+	*(size_t*)last = s;
+	last++;
+	void *ptr = last;
+	last += s;
 	
 	return ptr;
 }
 
 void free(void *ptr)
 {
-	size_t *size = (size_t*)(ptr-SIZE);
-	for(uint8_t *end = ptr+*size; ptr != end; ptr++)
-		*((uint8_t*)ptr) = 0;
-	
-	*size = 0;
+	size_t *end = *(size_t*)(ptr-SIZE)*SIZE + ptr;
+	for(size_t *it = ptr-SIZE; it < end; it++)
+		*it = 0;
 }
