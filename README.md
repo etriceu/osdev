@@ -1,5 +1,6 @@
 # operating-system
 Simple operating system for x86 architecture.
+![image](https://user-images.githubusercontent.com/58367136/164913133-8c02a5c2-ef96-48d9-8d66-380f0dce9ea4.png)
 
 # Supports
 * Video: 80x25 color text mode
