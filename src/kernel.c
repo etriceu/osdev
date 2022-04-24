@@ -32,8 +32,7 @@ extern void kernelMain()
 	
 	mount(PRIMARY_MASTER, 1, end);
 	
-	const int cmdSize = 32;
-	char cmd[cmdSize];
+	char cmd[VIDEO_WIDTH];
 	int cmdi = 0;
 
 	while(1)
@@ -64,7 +63,7 @@ extern void kernelMain()
 					key >= 'a' && key <= 'z')
 					key -= 32;
 				
-				if(cmdi < cmdSize)
+				if(cmdi < VIDEO_WIDTH)
 				{
 					printn(&key, 1);
 					cmd[cmdi] = key;
