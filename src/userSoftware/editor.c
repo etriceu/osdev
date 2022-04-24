@@ -32,7 +32,7 @@ int strlen(char *str)
 	return n;
 }
 
-void newLine(char ***lines, uint32_t *size, int row)
+void newLine(char ***lines, uint32_t *size, volatile int row)
 {
 	*size += 1;
 	char **tmp = malloc(*size*sizeof(char*));

@@ -1,5 +1,5 @@
 GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O1 -fno-pic -fno-stack-protector
-GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -O2 -e main
+GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -O3 -e main
 
 ASMARG = --32
 LDARG = -melf_i386
