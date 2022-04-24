@@ -47,6 +47,6 @@ void clear();
 void print(const char *str);
 void printn(const char *str, size_t size);
 void printRaw(const uint16_t *str, size_t size);
-void setChar(int pos, char c, uint8_t s);
+void setChar(int pos, char c, uint16_t s);
 
 #endif // SCREEN_H_INCLUDED

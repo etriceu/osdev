@@ -118,7 +118,7 @@ void printn(const char *str, size_t size){
 void printRaw(const uint16_t *str, size_t size){
 	call(31, (uint32_t)str, size, 0, 0);
 }
-void setChar(int pos, char c, uint8_t s){
+void setChar(int pos, char c, uint16_t s){
 	call(32, pos, c, s, 0);
 }
 

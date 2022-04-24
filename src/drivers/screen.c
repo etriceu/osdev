@@ -104,8 +104,8 @@ void printRaw(const uint16_t *str, size_t size)
 	moveCursor(current-VIDEO_BEG);
 }
 
-void setChar(int pos, char c, uint8_t s)
+void setChar(int pos, char c, uint16_t s)
 {
-	if(pos < VIDEO_WIDTH*VIDEO_HEIGHT)
+	if(pos < VIDEO_WIDTH*VIDEO_HEIGHT && pos >= 0)
 		*((uint16_t*)VIDEO_BEG+pos) = s | c;
 }
