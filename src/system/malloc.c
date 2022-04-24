@@ -2,7 +2,7 @@
 
 #define SIZE sizeof(size_t)
 
-#define RAM_BEG 0x100000
+#define RAM_BEG (void*)0x100000
 #define RAM_END 0x40000000 //(1GB) //idk how to check ram size
 
 static size_t *last = RAM_BEG;
@@ -22,7 +22,7 @@ void* malloc(size_t size)
 	int try = 0;
 	while(1)
 	{
-		if(last >= RAM_END)
+		if(last >= (size_t*)RAM_END)
 		{
 			last = RAM_BEG;
 			s = 0;
