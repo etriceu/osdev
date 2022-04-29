@@ -56,6 +56,6 @@ void* malloc(size_t size)
 void free(void *ptr)
 {
 	size_t *end = *(size_t*)(ptr-SIZE)*SIZE + ptr;
-	for(size_t *it = ptr-SIZE; it < end; it++)
+	for(volatile size_t *it = ptr-SIZE; it < end; it++)
 		*it = 0;
 }

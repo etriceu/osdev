@@ -23,10 +23,11 @@ void system(const char *cmd)
 	setStyle(FG_GREEN);
 	char **args;
 	int argc = 0;
-	int size = 0;
+	volatile int size = 0;
 	for(; cmd[size] != 0; size++);
 	size++;
 	char *cmd2 = malloc(size);
+
 	for(int n = 0; n < size; n++)
 	{
 		cmd2[n] = cmd[n];

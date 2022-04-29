@@ -11,6 +11,6 @@
 #include "system.h"
 #include "timer.h"
 
-void systemCall(Registers reg);
+uint8_t systemCall(Registers reg);
 
 #endif // SYSTEM_CALLS_H_INCLUDED
