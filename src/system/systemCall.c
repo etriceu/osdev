@@ -132,9 +132,9 @@ func calls[36] = {	f0, f1, f2, f3, f4, f5, f6, f7, f8, f9,
 					f20, f21, f22, f23, f24, f25, f26, f27,
 					f28, f29, f30, f31, f32, f33, f34, f35};
 
-uint8_t systemCall(Registers reg)
+uint8_t systemCall(Registers *reg)
 {
-	uint32_t *args = (uint32_t*)reg.ebx;
+	uint32_t *args = (uint32_t*)reg->ebx;
 	uint32_t id = args[0];
 	if(id < 0 || id >= sizeof(calls)/sizeof(calls[0]))
 	{

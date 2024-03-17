@@ -3,23 +3,12 @@
 isr_common:
 	cli
 	pusha
-	mov %ds, %ax
-	push %eax
-	mov $16, %ax
-	mov %ax, %ds
-	mov %ax, %es
-	mov %ax, %fs
-	mov %ax, %gs
+	push %esp
 	
 	call isrHandler
 	
-	pop %eax
-	mov %ax, %ds
-	mov %ax, %es
-	mov %ax, %fs
-	mov %ax, %gs
+	add $4, %esp
 	popa
-	
 	add $8, %esp
 	sti
 iret

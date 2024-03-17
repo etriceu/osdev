@@ -1,4 +1,4 @@
-GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O1 -fno-pic -fno-stack-protector
+GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O3 -fno-pic -fno-stack-protector
 GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -O3 -e main
 
 ASMARG = --32

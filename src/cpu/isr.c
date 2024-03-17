@@ -5,7 +5,7 @@
 #include "../include/keyboard.h"
 #include "../include/timer.h"
 
-char *exceptions[] = {
+static const char *exceptions[] = {
 	"Divide by zero Error",
 	"Debug",
 	"Non-maskable Interrupt",
@@ -40,26 +40,27 @@ char *exceptions[] = {
 	"Reserved (31)"
 };
 
-void isrHandler(Registers reg)
+void isrHandler(Registers *reg)
 {
-	if(reg.id == 128)
+	if(reg->id == 128)
 		systemCall(reg);
-	else if(reg.id >= 32)
+	else if(reg->id >= 32)
 	{
-		if(reg.id == 32)
+		if(reg->id == 32)
 			timer();
-		else if(reg.id == 33)
+		else if(reg->id == 33)
 			keyboard();
 			
-		if(reg.id >= 40)
+		if(reg->id >= 40)
 			out(0xa0, 0x20);
 	
 		out(0x20, 0x20);
 	}
-	else if(reg.id < 32)
+	else if(reg->id < 32)
 	{
 		print("\nISR: ");
-		print(exceptions[reg.id]);
+		print(exceptions[reg->id]);
 		print("\n");
+		asm("hlt");
 	}
 }

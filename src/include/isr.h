@@ -5,13 +5,13 @@
 
 typedef struct
 {
-	uint32_t ds;
+	//uint32_t ds;
     uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
 	uint32_t id, error;
-	uint32_t eip, cs, eflags, useresp, ss;
+	//uint32_t eip, cs, eflags, useresp, ss;
 } __attribute__((packed)) Registers;
 
-void isrHandler(Registers reg);
+void isrHandler(Registers *reg);
 
 extern void isr0();
 extern void isr1();
