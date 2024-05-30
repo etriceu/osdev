@@ -38,7 +38,7 @@ uint8_t isKeyEvent();
 uint8_t getKey();
 int8_t getKeyStatus(uint8_t key);
 void keyboard();
-uint8_t pullKeys();
+uint8_t pollKeys();
 
 void translateKeyCodes();
 uint8_t keyID(uint8_t key);

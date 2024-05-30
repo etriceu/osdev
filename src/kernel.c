@@ -37,7 +37,7 @@ extern void kernelMain()
 
 	while(1)
 	{
-		for(uint8_t key = pullKeys(); key != KEY_NONE; key = pullKeys())
+		for(uint8_t key = pollKeys(); key != KEY_NONE; key = pollKeys())
 		{
 			if(key < KEY_SPECIAL)
 				key = keys[key];

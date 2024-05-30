@@ -21,7 +21,7 @@ uint32_t ataGetSize(uint8_t device){
 }
 
 //keyboard
-uint8_t pullKeys(){
+uint8_t pollKeys(){
 	return call(3, 0, 0, 0, 0);
 }
 uint8_t keyID(uint8_t key){

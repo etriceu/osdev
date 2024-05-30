@@ -67,7 +67,7 @@ void keyboard()
 	}
 }
 
-uint8_t pullKeys()
+uint8_t pollKeys()
 {
 	if(kbdFirst == kbdLast)
 		return KEY_NONE;

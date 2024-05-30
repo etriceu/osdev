@@ -13,7 +13,7 @@ void f2(uint32_t *p){
 
 //keyboard
 void f3(uint32_t *p){
-	*((uint8_t*)p[0]) = pullKeys();
+	*((uint8_t*)p[0]) = pollKeys();
 }
 void f4(uint32_t *p){
 	*((uint8_t*)p[0]) = keyID(p[1]);
