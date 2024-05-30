@@ -1,5 +1,6 @@
 #include "../include/ata.h"
 #include "../include/malloc.h"
+#include "../include/functions.h"
 
 uint32_t diskSize[4] = {-1, -1, -1, -1};
 const uint16_t buses[] = {0x1f0, 0x1f0, 0x170, 0x170};

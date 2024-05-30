@@ -40,7 +40,7 @@ extern void kernelMain()
 		for(uint8_t key = pollKeys(); key != KEY_NONE; key = pollKeys())
 		{
 			if(key < KEY_SPECIAL)
-				key = keys[key];
+				key = KEYS[key];
 
 			if(key == KEY_ENTER)
 			{

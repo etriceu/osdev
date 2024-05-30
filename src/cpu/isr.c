@@ -4,6 +4,7 @@
 #include "../include/irq.h"
 #include "../include/keyboard.h"
 #include "../include/timer.h"
+#include "../include/functions.h"
 
 static const char *exceptions[] = {
 	"Divide by zero Error",

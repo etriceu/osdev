@@ -1,7 +1,10 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include "functions.h"
+#include <stdint.h>
+#ifndef KERNEL
+#include "userCall.h"
+#endif
 
 // US QWERTY
 enum {KEY_NONE, KEY_ESC=128, KEY_BACKSPACE, KEY_TAB, KEY_ENTER, KEY_LCTRL,
@@ -15,7 +18,7 @@ enum {KEY_NONE, KEY_ESC=128, KEY_BACKSPACE, KEY_TAB, KEY_ENTER, KEY_LCTRL,
 #define KEY_RELEASED 0
 #define KEY_PRESSED 1
 
-static const uint8_t keys[] = {
+static const uint8_t KEYS[] = {
 	0, KEY_ESC, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=',
 	KEY_BACKSPACE, KEY_TAB, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o',
 	'p', '[', ']', KEY_ENTER, KEY_LCTRL, 'a', 's', 'd', 'f', 'g', 'h',
@@ -33,14 +36,28 @@ struct {
 #define KEY_SPECIAL_ID 0xE0
 #define KEY_PRE_REL 0x80
 #define KEY_CACHE 32
-	
+
+#ifdef KERNEL
 uint8_t isKeyEvent();
 uint8_t getKey();
-int8_t getKeyStatus(uint8_t key);
 void keyboard();
-uint8_t pollKeys();
+#endif
 
+int8_t getKeyStatus(uint8_t key)
+#ifndef KERNEL
+{return call(5, key, 0, 0, 0);}
+#endif
+;
+uint8_t pollKeys()
+#ifndef KERNEL
+{return call(3, 0, 0, 0, 0);}
+#endif
+;
 void translateKeyCodes();
-uint8_t keyID(uint8_t key);
+uint8_t keyID(uint8_t key)
+#ifndef KERNEL
+{return call(4, key, 0, 0, 0);}
+#endif
+;
 
 #endif // KEYBOARD_H_INCLUDED

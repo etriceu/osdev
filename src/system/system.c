@@ -5,6 +5,7 @@
 #include "../include/ata.h"
 #include "../include/exec.h"
 #include "../include/irq.h"
+#include "../include/screen.h"
 
 uint8_t checkMnt()
 {

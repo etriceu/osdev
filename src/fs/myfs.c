@@ -1,6 +1,7 @@
 #include "../include/myfs.h"
 #include "../include/ata.h"
 #include "../include/malloc.h"
+#include "../include/functions.h"
 
 /*
 first sector	|	N sectors	|	last sectors

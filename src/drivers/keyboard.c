@@ -1,4 +1,5 @@
 #include "../include/keyboard.h"
+#include "../include/functions.h"
 
 uint8_t keyStatus[KEY_SIZE];
 uint8_t cache[KEY_CACHE];
@@ -80,7 +81,7 @@ uint8_t pollKeys()
 void translateKeyCodes()
 {
 	for(int n = 0; n < KEY_SIZE; n++)
-		key2id[keys[n]] = n;
+		key2id[KEYS[n]] = n;
 }
 
 uint8_t keyID(uint8_t key)

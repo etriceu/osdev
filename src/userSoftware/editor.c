@@ -1,4 +1,8 @@
-#include "../include/systemCall.h"
+#include "../include/screen.h"
+#include "../include/myfs.h"
+#include "../include/keyboard.h"
+#include "../include/malloc.h"
+#include "../include/timer.h"
 
 struct
 {
@@ -121,7 +125,7 @@ int main(int argc, char** argv)
 		for(uint8_t key = pollKeys(); key != KEY_NONE; key = pollKeys())
 		{
 			if(key < KEY_SPECIAL)
-				key = keys[key];
+				key = KEYS[key];
 			
 			if(getKeyStatus(keyID(KEY_LCTRL)))
 			{

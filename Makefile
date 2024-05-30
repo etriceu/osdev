@@ -1,5 +1,5 @@
-GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O3 -fno-pic -fno-stack-protector
-GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -O3 -e main
+GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O3 -fno-pic -fno-stack-protector -D KERNEL
+GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -flto -O3 -e main
 
 ASMARG = --32
 LDARG = -melf_i386
@@ -21,10 +21,10 @@ sysimg:
 	g++ -O3 src/tools/sysimg.cpp -o sysimg
 
 helloworld:
-	gcc $(GCCARG_USER) src/system/systemCalls.c src/userSoftware/$@.c -o $@
+	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
 	
 editor:
-	gcc $(GCCARG_USER) src/system/systemCalls.c src/userSoftware/$@.c -o $@
+	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
 	
 userSoft: $(userObj) $(userSoftware)
 

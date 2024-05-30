@@ -1,4 +1,4 @@
-#include "../include/systemCall.h" 
+#include "../include/screen.h" 
 
 int main()
 {
