@@ -1,19 +1,25 @@
 .code16
 .globl _start
 _start:
-	mov $0, %ax
+	#load kernel info
+	xor %ax, %ax
 	mov %ax, %es
+	mov $0x500, %bx # desc addr
+	mov $0x02, %ah # read sectors from drive
+	mov $0x01, %al # 1 sector (512B) to read
+	mov $0x02, %cl # sector
+	mov $0x00, %ch # head 0
+	mov $0x00, %dh # drive 0
+	int $0x13
+	
+	#load kernel
 	mov $0x7e00, %bx
 	mov $0x02, %ah
-	mov $64, %al # is 32KB enough?
-	mov $0x02, %cl
-	mov $0x00, %ch
-	mov $0x00, %dh
-	
+	mov 0x500, %al # load kernel size in sectors
+	mov 0x501, %cl # load address
+	mov 0x502, %ch
+	mov 0x503, %dh
 	int $0x13
-
-	mov $0x2401, %ax
-	int $0x15
 	
 	cli
 	lgdt gdtReg
@@ -55,18 +61,3 @@ gdtReg:
 
 . = _start + 510
 .word 0xaa55
-end:
-## myfs structure
-.byte 64 # 32KB
-.byte 0
-.byte 0
-#next
-.byte 0
-.byte 0
-.byte 0
-#last sector size
-.byte 0
-.byte 0
-#name
-.ascii "kernel.bin\0"
-. = end + 512
