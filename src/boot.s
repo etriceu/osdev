@@ -4,21 +4,22 @@ _start:
 	#load kernel info
 	xor %ax, %ax
 	mov %ax, %es
-	mov $0x500, %bx # desc addr
+	mov $0x7e00, %bx # desc addr
 	mov $0x02, %ah # read sectors from drive
 	mov $0x01, %al # 1 sector (512B) to read
-	mov $0x02, %cl # sector
-	mov $0x00, %ch # head 0
-	mov $0x00, %dh # drive 0
+	mov $0x02, %cl # sector 2
+	mov $0x00, %ch # cylinder 0
+	mov $0x00, %dh # head 0
+	mov $0x80, %dl # first hard drive
 	int $0x13
 	
 	#load kernel
-	mov $0x7e00, %bx
+	mov $0x8000, %bx
 	mov $0x02, %ah
-	mov 0x500, %al # load kernel size in sectors
-	mov 0x501, %cl # load address
-	mov 0x502, %ch
-	mov 0x503, %dh
+	mov 0x7e00, %al # load kernel size in sectors
+	mov 0x7e01, %cl # load address
+	mov 0x7e02, %ch
+	mov 0x7e03, %dh
 	int $0x13
 	
 	cli
@@ -61,3 +62,13 @@ gdtReg:
 
 . = _start + 510
 .word 0xaa55
+# default information about kernel and first partition
+# may be changed by sysimg
+.byte 0x7f # kernel size
+.byte 0x03 # kernel hard drive address
+.byte 0x00
+.byte 0x00
+.long 0x00 # LBA, myfs start address, 0 - none
+.long 0x00 # myfs end address
+
+. = _start + 1024
