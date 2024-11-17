@@ -1,0 +1,9 @@
+#ifndef MYFS_COMMON_H
+#define MYFS_COMMON_H
+
+#define MY_EOF 1
+#define MY_FS_SECTOR_SIZE 512
+#define MY_FS_BLOCK_HEADER_SIZE 8
+#define MY_FS_NODE_SIZE 10
+
+#endif // MYFS_COMMON_H_INCLUDED
