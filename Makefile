@@ -1,7 +1,7 @@
-GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O3 -fno-pic -fno-stack-protector -D KERNEL
-GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -flto -O3 -e main
+GCCARG = -m32 -nostdlib -fno-builtin -fno-exceptions -fno-leading-underscore -O3 -fno-pic -fno-stack-protector -fno-tree-vectorize -D KERNEL -Wall 
+GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -flto -O3 -fno-tree-vectorize -e main -Wall
 
-ASMARG = --32
+ASMARG = --32 -nostdlib
 LDARG = -melf_i386
 
 objects = src/boot.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/system/system.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdt.o src/cpu/gdtFlush.o src/cpu/idt.o src/cpu/isr.o src/cpu/interrupts.o src/system/systemCall.o src/system/exec.o src/cpu/irq.o src/cpu/timer.o
@@ -29,7 +29,7 @@ editor:
 userSoft: $(userObj) $(userSoftware)
 
 myos.img: myos.bin sysimg userSoft
-	./sysimg myos.bin myos.img 10 $(userSoftware)
+	./sysimg myos.bin myos.img 1000 init $(userSoftware)
 	
 all: myos.img
 
