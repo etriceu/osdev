@@ -1,7 +1,7 @@
 #include "../include/keyboard.h"
 #include "../include/functions.h"
 
-uint8_t keyStatus[LAST_KEY_ID];
+uint8_t keyStatus[256];
 uint8_t cache[KEY_CACHE];
 uint8_t kbdLast = 0;
 uint8_t kbdFirst = 0;
