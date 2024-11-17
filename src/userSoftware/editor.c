@@ -88,8 +88,8 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	struct node *nod = findFile(mnt, argv[1]);
-	if(nod == NULL)
+	struct node *node = findFile(mnt, argv[1]);
+	if(node == NULL)
 	{
 		print("File not found.\n");
 		return 1;
@@ -98,11 +98,14 @@ int main(int argc, char** argv)
 	char **lines = NULL;
 	uint32_t num = 0;
 	int col = 0, row = 0, offset = 0;
+	struct file* file = fopen(node);
+	fseek(file, -1);
+	uint64_t size = ftell(file);
 	
-	uint64_t size;
-	struct file* file = fopen(nod, &size, MYFS_READ);
+	fseek(file, 0);
+
 	char *buf = malloc(size);
-	fread(file, size, buf);
+	fread(file, size, (uint8_t*)buf);
 	fclose(file);
 
 	newLine(&lines, &num, 0);
@@ -131,17 +134,14 @@ int main(int argc, char** argv)
 			{
 				if(key == 's')
 				{
-					removeFile(nod);
-					nod = newFile(mnt, argv[1]);
-					file = fopen(nod, NULL, MYFS_WRITE);
+					file = fopen(node);
 					
 					for(int y = 0; y < num; y++)
 					{
-						for(int x = 0; x < VIDEO_WIDTH && lines[y][x] != '\0'; x++)
-							fwrite(file, 1, &lines[y][x]);
-						fwrite(file, 1, "\n");
+						int size = strlen(lines[y])+1;
+						fwrite(file, size, (uint8_t*)lines[y]);
 					}
-					
+					ftrim(file);
 					fclose(file);
 				}
 				else if(key == 'x')

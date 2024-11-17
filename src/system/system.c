@@ -22,7 +22,7 @@ uint8_t checkMnt()
 void system(const char *cmd)
 {
 	setStyle(FG_GREEN);
-	char **args;
+	char **args = NULL;
 	int argc = 0;
 	volatile int size = 0;
 	for(; cmd[size] != 0; size++);
@@ -53,6 +53,7 @@ void system(const char *cmd)
 	if(strcmp(cmd, "exit"))
 	{
 		print("Bye\n");
+		
 		irqDisable();
 		asm volatile("hlt");
 	}
@@ -63,7 +64,11 @@ void system(const char *cmd)
 		if(checkMnt())
 		{
 			if(argc == 1)
-				newFile(getMountPoints(), args[0]); // get first mnt
+			{
+				size_t s = 0;
+				for(char *it = args[0]; *it != '\0'; it++, s++);
+				newFile(getMountPoints(), args[0], s); // get first mnt
+			}
 			else
 				print("newfile [fileName]\n");
 		}
@@ -74,9 +79,11 @@ void system(const char *cmd)
 		{
 			if(checkMnt())
 			{
+				size_t s = 0;
+				for(char *it = args[1]; *it != '\0'; it++, s++);
 				struct node *nod = findFile(getMountPoints(), args[0]);
 				if(nod)
-					renameFile(nod, args[1]);
+					renameFile(nod, args[1], s);
 				else
 					print("File not found.\n");
 			}
@@ -104,14 +111,12 @@ void system(const char *cmd)
 	{
 		if(checkMnt())
 		{
-			char *name = malloc(512);
 			for(struct node *nod = getMountPoints()->nodes; nod != 0; nod = nod->next)
 			{
-				getFileName(nod, name);
+				char *name = getFileName(nod, NULL);
 				print(name);
 				print("\n");
 			}
-			free(name);
 		}
 	}
 	else if(strcmp(cmd, "format")) // format first device
@@ -122,9 +127,9 @@ void system(const char *cmd)
 		print("formating... ");
 		uint32_t diskSize = ataGetSize(PRIMARY_MASTER);
 		for(; n <= diskSize; n += 255)
-			ataWrite(PRIMARY_MASTER, n, 255, zero);
+			ataWrite(PRIMARY_MASTER, n, 255, (uint8_t*)zero);
 		
-		ataWrite(PRIMARY_MASTER, n, diskSize-n*255, zero);
+		ataWrite(PRIMARY_MASTER, n, diskSize-n*255, (uint8_t*)zero);
 		
 		print("done\n");
 		free(zero);
@@ -145,8 +150,10 @@ void system(const char *cmd)
 				struct node *nod = findFile(getMountPoints(), args[0]);
 				if(nod)
 				{
-					uint64_t size;
-					struct file* file = fopen(nod, &size, MYFS_READ);
+					struct file* file = fopen(nod);
+					fseek(file, -1);
+					uint64_t size = ftell(file);
+					fseek(file, 0);
 					uint8_t *code = malloc(size);
 					fread(file, size, code);
 					fclose(file);

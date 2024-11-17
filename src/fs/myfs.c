@@ -3,351 +3,387 @@
 #include "../include/malloc.h"
 #include "../include/functions.h"
 
-/*
-first sector	|	N sectors	|	last sectors
-empty secotr	|	saved files	|	file table
+struct mount *mountPoints = NULL;
 
-saved files:
-	first file sector:
-		size of the data segment (3 bytes)
-		address of the next data segment (3 bytes)
-		last sector size (2 bytes) (only first data segment)
-		file name (504 bytes) (only first data segment)
-	next N sectors:
-		data
+void readNextBlockHeader(struct file *file)
+{
+	struct mount *mnt = file->node->mnt;
+	ataRead(mnt->device, file->nextBlock, 1, file->buf);
+	file->blockAdr = file->nextBlock;
+	file->offset = MY_FS_BLOCK_HEADER_SIZE;
+	file->blockSize = *(uint32_t*)file->buf;
+	file->nextBlock = *(uint32_t*)(file->buf+sizeof(file->blockSize));
+	file->sector = 0;
+}
 
-file table - array of 3B to the beginnings of files 
-*/
+uint8_t fseek(struct file *file, size_t pos)
+{
+	fflush(file);
+	
+	file->virtPos = 0;
+	file->nextBlock = file->node->firstBlock;
+	readNextBlockHeader(file);
 
-#define SIZE_OFFSET 0
-#define NEXT_OFFSET 3
-#define LSIZE_OFFSET 6
-#define NAME_OFFSET 8
-#define LBA_SIZE 3
-#define TABLE_SIZE  512/LBA_SIZE*LBA_SIZE
+	do
+	{
+		size_t bSize = file->blockSize*MY_FS_SECTOR_SIZE-MY_FS_BLOCK_HEADER_SIZE;
+		if(file->nextBlock == 0)
+		{
+			if(file->blockSize == 1)
+				bSize += MY_FS_BLOCK_HEADER_SIZE;
+			
+			bSize -= MY_FS_SECTOR_SIZE - file->node->lastSectorSize;
+				
+			if(file->virtPos+bSize <= pos)
+			{
+				file->sector = file->blockSize-1;
+				file->offset = file->node->lastSectorSize;
+				file->virtPos += bSize;
+				return MY_EOF;
+			}
+		}
+		
+		if(file->virtPos+bSize < pos)
+		{
+			file->virtPos += bSize;
+			readNextBlockHeader(file);
+		}
+		else
+		{
+			size_t diff = pos-file->virtPos+MY_FS_BLOCK_HEADER_SIZE;
+			file->sector = diff/MY_FS_SECTOR_SIZE;
+			if(file->sector == 0)
+				file->offset = diff;
+			else
+				file->offset = diff%MY_FS_SECTOR_SIZE;
+				
+			file->virtPos = pos;
+		}
+	} while(file->virtPos < pos);
+	
+	return 0;
+}
 
-uint64_t appendMode(struct file *file);
-
-struct mount *mountPoints = 0;
+size_t ftell(struct file *file)
+{
+	return file->virtPos;
+}
 
 struct mount* getMountPoints()
 {
 	return mountPoints;
 }
 
+void loadSuperNode(struct mount *mnt, struct node *superNode)
+{
+	superNode->firstBlock = mnt->begin;
+	superNode->nameSize = 0;
+	superNode->name = NULL;
+	superNode->mnt = mnt;
+	superNode->next = NULL;
+
+	uint8_t buf[MY_FS_SECTOR_SIZE];
+	ataRead(mnt->device, mnt->begin, 1, buf);
+	superNode->lastSectorSize = *((uint16_t*)(buf+MY_FS_BLOCK_HEADER_SIZE));
+}
+
 struct mount* mount(uint8_t device, uint32_t begin, uint32_t end)
 {
+	if(end == 0)
+		end = ataGetSize(device);
+	
+	if(!end)
+		return NULL;
+	
+	struct mount *lastMnt = mountPoints;
+	if(lastMnt != NULL)
+		do {
+			if(lastMnt->begin == begin && lastMnt->device == device
+				&& lastMnt->end == end)
+				return NULL;
+			
+			if(lastMnt->next != NULL)
+				lastMnt = lastMnt->next;
+		} while(1);
+	
 	struct mount *mnt = malloc(sizeof(struct mount));
 	mnt->begin = begin;
 	mnt->device = device;
-	mnt->next = 0;
-	if(end == 0)
-		end = ataGetSize(device);
+	mnt->next = mountPoints;
 	mnt->end = end;
 	
-	if(!end)
-	{
-		free(mnt);
-		return NULL;
-	}
+	mountPoints = mnt;
 
-	struct node **nod = &mnt->nodes;
-	uint8_t *buf = malloc(512);
-	for(; end >= begin; end--)
+	struct node firstNode;
+	loadSuperNode(mnt, &firstNode);
+
+	struct file *nodeTable = fopen(&firstNode);
+	if(fseek(nodeTable, MY_FS_NODE_SIZE) != MY_EOF)
 	{
-		ataRead(device, end, 1, buf);
-		uint8_t sum = 0;
-		for(int n = 0; n < 512 && !sum; n++)
-			sum |= buf[n];
-		
-		if(!sum)
-			break;
-		
-		for(int n = 0; n < TABLE_SIZE; n += LBA_SIZE)
-			if((buf[n] | buf[n+1] | buf[n+2]) != 0)
+		uint8_t isEOF;
+		do
+		{
+			isEOF = 0;
+			struct node *lastNode = mnt->nodes;
+			struct node *newNode = malloc(sizeof(struct node));
+			mnt->nodes = newNode;
+			isEOF += fread(nodeTable, 2, (uint8_t*)&newNode->lastSectorSize);
+			isEOF += fread(nodeTable, 4, (uint8_t*)&newNode->firstBlock);
+			isEOF += fread(nodeTable, 4, (uint8_t*)&newNode->nameSize);
+			
+			if(isEOF)
 			{
-				*nod = (struct node*)malloc(sizeof(struct node));
-				((struct node*)(*nod))->next = 0;
-				((struct node*)(*nod))->address[0] = buf[n];
-				((struct node*)(*nod))->address[1] = buf[n+1];
-				((struct node*)(*nod))->address[2] = buf[n+2];
-				((struct node*)(*nod))->mntPtr = mnt;
-				nod = &((struct node*)(*nod))->next;
+				free(newNode);
+				mnt->nodes = lastNode;
+				break;
 			}
+			
+			if(newNode->nameSize)
+			{
+				newNode->name = malloc(newNode->nameSize+1);
+				newNode->name[newNode->nameSize] = '\0';
+				isEOF = fread(nodeTable, newNode->nameSize, (uint8_t*)newNode->name);
+			}
+			
+			newNode->mnt = mnt;
+			newNode->next = lastNode;
+		} while(!isEOF);
 	}
-
-	free(buf);
-
-	if(mountPoints == 0)
-		mountPoints = mnt;
-	else
-		for(struct mount *m = mountPoints; m->next != 0 || !(m->next = mnt); m = m->next);
-	
+	fclose(nodeTable);
 	return mnt;
+}
+
+void ftrim(struct file *file)
+{
+	struct node *node = file->node;
+	struct mount *mnt = node->mnt;
+	
+	struct file fileTrim = *file;
+	
+	node->lastSectorSize = file->offset;
+	if(file->sector == 0)
+		 node->lastSectorSize -= MY_FS_BLOCK_HEADER_SIZE;
+	
+	if(file->virtPos != 0)
+	{
+		for(uint8_t *it = file->buf+file->offset, *end = file->buf+MY_FS_SECTOR_SIZE;
+			it < end; it++)
+			*it = 0;
+		file->nextBlock = 0;
+		file->doFlush = 1;
+		fflush(file);
+		if(file->sector+1 < file->blockSize)
+			ataFill(mnt->device, file->sector+file->blockAdr+1,
+					file->blockSize-file->sector-1, 0);
+		if(fileTrim.nextBlock != 0)
+			readNextBlockHeader(&fileTrim);
+		else
+			return;
+	}
+	
+	do
+	{
+		uint32_t blockAdr = fileTrim.blockAdr;
+		uint32_t blockSize = fileTrim.blockSize;
+		
+		ataFill(mnt->device, blockAdr, blockSize, 0);
+		
+		if(fileTrim.nextBlock != 0)
+			readNextBlockHeader(&fileTrim);
+		else
+			break;
+	} while(1);
+	
+	file->doFlush = 0;
 }
 
 void umount(struct mount *mnt)
 {
-	for(struct node *nod = mnt->nodes; nod != 0;)
+	struct node superNode;
+	loadSuperNode(mnt, &superNode);
+	struct file *nodeTable = fopen(&superNode);
+	
+	fwrite(nodeTable, 2, (uint8_t*)&superNode.lastSectorSize);
+	fwrite(nodeTable, 4, (uint8_t*)&superNode.firstBlock);
+	fwrite(nodeTable, 4, (uint8_t*)&superNode.nameSize);
+	fwrite(nodeTable, superNode.nameSize, (uint8_t*)superNode.name);
+	
+	for(struct node *node = mnt->nodes; node != NULL;)
 	{
-		void *ptr = nod;
-		nod = nod->next;
+		fwrite(nodeTable, 2, (uint8_t*)&node->lastSectorSize);
+		fwrite(nodeTable, 4, (uint8_t*)&node->firstBlock);
+		fwrite(nodeTable, 4, (uint8_t*)&node->nameSize);
+		fwrite(nodeTable, node->nameSize, (uint8_t*)node->name);
+		
+		void *ptr = node;
+		if(node->name != NULL)
+			free(node->name);
+		node = node->next;
 		free(ptr);
 	}
+	
+	ftrim(nodeTable);
+	
+	fseek(nodeTable, 0);
+	fwrite(nodeTable, 2, (uint8_t*)&superNode.lastSectorSize);
+
+	fclose(nodeTable);
 	
 	if(mountPoints == mnt)
 		mountPoints = mnt->next;
 	else
 	{
 		struct mount *m = mountPoints;
-		for(; m->next != mnt && m->next != 0; m = m->next);
-		if(m != 0)
+		for(; m->next != mnt && m->next != NULL; m = m->next);
+		if(m != NULL)
 			m->next = mnt->next;
 	}
 	free(mnt);
 }
 
-struct node* newFile(struct mount *mnt, const char *name)
+void saveBlockInfo(struct file *file)
 {
-	uint32_t pos = mnt->begin;
-	uint8_t *buf = malloc(512);
-	
-	while(1)
-	{
-		ataRead(mnt->device, pos, 1, buf);
-		uint32_t size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
-		if(size == 0)
-		{
-			int n = 0;
-			for(; n < NAME_OFFSET; n++)
-				buf[n] = 0;
-			
-			buf[SIZE_OFFSET] = 1;
-			
-			for(int s = 0; name[s] != 0; s++, n++)
-				buf[n] = name[s];
-			
-			for(; n < 512; n++)
-				buf[n] = 0;
-			
-			ataWrite(mnt->device, pos, 1, buf);
-			
-			break;
-		}
-		else
-			pos += size;
-	}
-	
-	struct node **nod = &mnt->nodes;
-	for(; *nod != 0; nod = &((struct node*)(*nod))->next);
-	*nod = (struct node*)malloc(sizeof(struct node));
-	((struct node*)(*nod))->next = 0;
-	((struct node*)(*nod))->address[0] = (uint8_t)pos;
-	((struct node*)(*nod))->address[1] = (uint8_t)(pos>>8);
-	((struct node*)(*nod))->address[2] = (uint8_t)(pos>>16);
-	((struct node*)(*nod))->mntPtr = mnt;
-	
-	for(uint32_t end = mnt->end; end >= mnt->begin; end--)
-	{
-		ataRead(mnt->device, end, 1, buf);
-		for(int n = 0; n < TABLE_SIZE; n += LBA_SIZE)
-			if((buf[n] | buf[n+1] | buf[n+2]) == 0)
-			{
-				buf[n] = (uint8_t)pos;
-				buf[n+1] = (uint8_t)(pos>>8);
-				buf[n+2] = (uint8_t)(pos>>16);
-				
-				ataWrite(mnt->device, end, 1, buf);
-				free(buf);
-				return *nod;
-			}
-	}
+	struct mount *mnt = file->node->mnt;
+	uint8_t *buf = malloc(MY_FS_SECTOR_SIZE);
+	ataRead(mnt->device, file->blockAdr, 1, buf);
+	*(uint32_t*)buf = file->blockSize;
+	*(uint32_t*)(buf+sizeof(file->blockSize)) = file->nextBlock;
+	ataWrite(mnt->device, file->blockAdr, 1, buf);
 	free(buf);
-	return 0;
 }
 
-void getFileName(struct node *nod, char *dest)
+uint8_t createOrExtendBlock(struct file *file, uint32_t from)
 {
-	uint8_t *buf = malloc(512);
-	struct mount *mnt = nod->mntPtr;
-	ataRead(mnt->device, *(uint32_t*)nod->address & 0x00ffffff, 1, buf);
-	for(int n = NAME_OFFSET; buf[n] != 0 && n < 512; n++, dest++)
-		*dest = buf[n];
+	struct node *node = file->node;
+	struct mount *mnt = node->mnt;
+	uint8_t *buf = malloc(MY_FS_SECTOR_SIZE);
+	uint8_t newBlock = 0;
+	uint8_t end = 0;
+	uint32_t i = from;
 	
-	*dest = 0;
-	
+	do
+	{
+		ataRead(mnt->device, i, 1, buf);
+		
+		uint32_t blockSize = *(uint32_t*)buf;
+		if(blockSize > 0) {
+			i += blockSize;
+			newBlock = 1;
+		}
+		else
+		{
+			if(file->blockAdr == 0) //first new block
+			{
+				node->firstBlock = i;
+				file->blockAdr = i;
+				file->blockSize = 1;
+				file->nextBlock = 0;
+				file->offset = MY_FS_BLOCK_HEADER_SIZE;
+			}
+			else if(!newBlock) //extend
+				file->blockSize++;
+			else // extend with new block
+			{
+				file->nextBlock = i;
+				saveBlockInfo(file);
+				file->blockAdr = i;
+				file->blockSize = 1;
+				file->sector = 0;
+				file->nextBlock = 0;
+				file->offset = MY_FS_BLOCK_HEADER_SIZE;
+			}
+			
+			saveBlockInfo(file);
+			free(buf);
+			return 0;
+		}
+		
+		if(i >= mnt->end)
+		{
+			i = mnt->begin;
+			end = 1;
+		}
+	} while(end ^ (i >= from));
 	free(buf);
+	return MY_EOF;
+}
+
+struct node* newFile(struct mount *mnt, const char *name, const size_t size)
+{
+	struct node *newNode = malloc(sizeof(struct node));
+	newNode->next = mnt->nodes;
+	newNode->mnt = mnt;
+	newNode->lastSectorSize = 0;
+	struct file file;
+	file.blockAdr = 0;
+	file.node = newNode;
+	file.offset = MY_FS_BLOCK_HEADER_SIZE;
+	file.blockSize = 1;
+	
+	if(createOrExtendBlock(&file, mnt->begin))
+	{
+		free(newNode);
+		return NULL;
+	}
+	renameFile(newNode, name, size);
+	
+	mnt->nodes = newNode;
+	return newNode;
 }
 
 struct node* findFile(struct mount *mnt, const char* name)
 {
-	uint8_t *buf = malloc(512);
-	for(struct node *nod = mnt->nodes; nod != 0; nod = nod->next)
-	{
-		ataRead(mnt->device, *(uint32_t*)nod->address & 0x00ffffff, 1, buf);
-		if(strcmp(name, &buf[NAME_OFFSET]))
-		{
-			free(buf);
-			return nod;
-		}
-	}
-	free(buf);
-	return 0;
+	struct node *n = mnt->nodes;
+	for(; n != NULL && !strcmp(n->name, name); n = n->next);
+	return n;
 }
 
-void removeFile(struct node* nod)
+void removeFile(struct node* node)
 {
-	struct mount *mnt = nod->mntPtr;
-	uint8_t *buf = malloc(512);
-	uint8_t *zero = malloc(512);
-	uint8_t sum = 0;
-	uint32_t end;
-	uint8_t found = 0;
-	for(end = mnt->end; end >= mnt->begin && !found; end--)
+	struct mount *mnt = node->mnt;
+	struct node *prev = NULL;
+	struct node *n = mnt->nodes;
+	for(; n != NULL && n != node; prev = n, n = n->next);
+
+	if(n == node)
 	{
-		sum = 0;
-		ataRead(mnt->device, end, 1, buf);
-		for(int n = 0; n < TABLE_SIZE; n += LBA_SIZE)
-		{
-			if( buf[n] == nod->address[0] &&
-				buf[n+1] == nod->address[1] &&
-				buf[n+2] == nod->address[2])
-			{
-				buf[n] = 0;
-				buf[n+1] = 0;
-				buf[n+2] = 0;
-				found = 1;
-				ataWrite(mnt->device, end, 1, buf);
-			}
-			sum |= buf[n];
-			sum |= buf[n+1];
-			sum |= buf[n+2];
-		}
-		if(!sum)
-			break;
-	}
-	if(!sum && found)
-		while(1)
-		{
-			ataRead(mnt->device, end-1, 1, buf);
-			sum = 0;
-			for(int n = 0; n < 512 && !sum; n++)
-				sum |= buf[n];
-			
-			if(sum)
-			{
-				ataWrite(mnt->device, end, 1, buf);
-				ataWrite(mnt->device, end-1, 1, zero);
-				end--;
-			}
-			else
-				break;
-		}
-	
-	uint32_t size, next, lba = *(uint32_t*)nod->address & 0x00ffffff;
-	while(1)
-	{
-		ataRead(mnt->device, lba, 1, buf);
-		size = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
-		next = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
-		
-		for(uint32_t n = 0; n < size; n++)
-			ataWrite(mnt->device, lba+n, 1, zero);
-		
-		if(next)
-			lba = next;
+		if(prev == NULL)
+			mnt->nodes = n->next;
 		else
-			break;
-	}
-
-	if(nod == mnt->nodes)
-	{
-		mnt->nodes = nod->next;
-		free(nod);
-	}
-	else
-		for(struct node *n = mnt->nodes; n != 0; n = n->next)
-			if(n->next == nod)
-			{
-				n->next = nod->next;
-				free(nod);
-				break;
-			}
-
-	free(buf);
-	free(zero);
-}
-
-void renameFile(struct node* nod, const char *name)
-{
-	struct mount *mnt = nod->mntPtr;
-	uint8_t *buf = malloc(512);
-	uint32_t lba = *(uint32_t*)nod->address & 0x00ffffff;
-	ataRead(mnt->device, lba, 1, buf);
-	
-	int n = NAME_OFFSET;
-	for(; name[n] != 0; n++)
-		buf[n] = name[n];
-	buf[n] = 0;
-	
-	ataWrite(mnt->device, lba, 1, buf);
-	free(buf);
-}
-
-struct file* fopen(struct node* nod, uint64_t *sizeOut, uint8_t mode)
-{
-	struct mount *mnt = nod->mntPtr;
-	struct file *file = malloc(sizeof(struct file));
-	
-	file->lba = *(uint32_t*)nod->address & 0x00ffffff;
-	file->read.offset = file->lba+1;
-	file->read.pos = 0;
-	file->read.bufpos = 0;
-	file->node = nod;
-	
-	ataRead(mnt->device, file->lba, 1, file->read.buf);
-	file->read.size = *(uint32_t*)(file->read.buf+SIZE_OFFSET) & 0x00ffffff;
-	file->read.next = *(uint32_t*)(file->read.buf+NEXT_OFFSET) & 0x00ffffff;
-	file->lastSize = *(uint16_t*)(file->read.buf+LSIZE_OFFSET);
-	
-	file->write = file->read;
-	
-	
-	uint8_t *buf = malloc(512);
-	uint32_t size = 0, pos = file->lba;
-	do
-	{
-		ataRead(mnt->device, pos, 1, buf);
-		file->write.offset = pos+1;
-		uint32_t s = *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
-		if(s != 0)
-			size += s-1;
-		pos = *(uint32_t*)(buf+NEXT_OFFSET) & 0x00ffffff;
-	} while(pos);
-	
-	if(size != 0)
-		size--;
-	
-	if(sizeOut)
-		*sizeOut = 512*(size)+file->lastSize;
-	
-	if(mode)
-	{
-		file->write.pos = (*(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff) - 1;
-		file->write.bufpos = file->lastSize;
-		free(buf);
+			prev->next = n->next;
 		
-		if(file->write.bufpos)
-		{
-			file->write.pos--;
-			ataRead(mnt->device, file->write.offset+file->write.pos, 1, file->write.buf);
-			buf = malloc(512);
-			ataWrite(mnt->device, file->write.offset+file->write.pos, 1, buf);
-			free(buf);
-		}
+		struct file *file = fopen(n);
+		ftrim(file);
+		fclose(file);
+		
+		free(n->name);
+		free(n);
 	}
-	else
-		free(buf);
+}
+
+void renameFile(struct node* node, const char *name, size_t size)
+{
+	if(node->nameSize > 0)
+		free(node->name);
+	node->nameSize = size;
+	node->name = malloc(size+1);
+	
+	for(size_t n = 0; n < size; n++)
+		node->name[n] = name[n];
+	node->name[size] = '\0';
+}
+
+struct file* fopen(struct node* node)
+{
+	struct file *file = malloc(sizeof(struct file));
+	file->node = node;
+	file->nextBlock = node->firstBlock;
+	file->virtPos = 0;
+	file->sector = 0;
+	file->offset = MY_FS_BLOCK_HEADER_SIZE;
+	file->doFlush = 0;
+	
+	readNextBlockHeader(file);
 	
 	return file;
 }
@@ -360,107 +396,90 @@ void fclose(struct file *file)
 
 uint8_t fread(struct file *file, size_t size, uint8_t *dest)
 {
-	struct node *nod = file->node;
-	struct mount *mnt = nod->mntPtr;
-	for(uint8_t *end = dest+size; dest < end;)
+	struct node *node = file->node;
+	struct mount *mnt = node->mnt;
+	for(uint8_t *end = dest+size; dest < end; dest++, file->offset++, file->virtPos++)
 	{
-		if(file->read.bufpos == 0)
-		{
-			ataRead(mnt->device, file->read.offset+file->read.pos, 1, file->read.buf);
-			file->read.pos++;
-			if(file->read.pos > file->read.size)
+		if(file->nextBlock == 0 && file->sector >= file->blockSize-1
+			&& file->offset-MY_FS_BLOCK_HEADER_SIZE >= node->lastSectorSize)
+			return MY_EOF;
+		
+		if(file->offset >= MY_FS_SECTOR_SIZE) {
+			if(file->sector >= file->blockSize-1)
+				readNextBlockHeader(file);
+			else
 			{
-				file->read.pos = 0;
-				file->read.offset = file->read.next+1;
-				ataRead(mnt->device, file->read.offset, 1, file->read.buf);
-				file->read.size = *(uint32_t*)(file->read.buf+SIZE_OFFSET) & 0x00ffffff;
-				file->read.next = *(uint32_t*)(file->read.buf+NEXT_OFFSET) & 0x00ffffff;
-				continue;
+				file->offset = 0;
+				file->sector++;
+				ataRead(mnt->device, file->sector+file->blockAdr, 1, file->buf);
 			}
 		}
 		
-		*dest = file->read.buf[file->read.bufpos];
-		dest++;
-		file->read.bufpos++;
-		
-		if(file->read.next == 0 && file->read.size-1 <= file->read.pos &&
-			file->read.bufpos > file->lastSize)
-			return EOF;
-		
-		file->read.bufpos %= 512;
+		*dest = file->buf[file->offset];
 	}
 	return 0;
 }
 
 void write(struct file *file)
 {
-	struct node *nod = file->node;
-	struct mount *mnt = nod->mntPtr;
-	uint8_t *buf = malloc(1024);
-	uint32_t size;
-	ataRead(mnt->device, file->write.offset+file->write.pos, 1, buf);
-	if(*(uint32_t*)(buf+SIZE_OFFSET))
-	{
-		uint32_t next = file->write.offset+file->write.pos;
-		do
-		{
-			next += *(uint32_t*)(buf+SIZE_OFFSET) & 0x00ffffff;
-			ataRead(mnt->device, next, 2, buf);
-		} while(*(uint32_t*)(buf+SIZE_OFFSET) || *(uint32_t*)(buf+SIZE_OFFSET+512));
-
-		ataRead(mnt->device, file->write.offset-1, 1, buf);
-		size = file->write.pos+2;
-
-		buf[SIZE_OFFSET] = (uint8_t)size;
-		buf[SIZE_OFFSET+1] = (uint8_t)(size>>8);
-		buf[SIZE_OFFSET+2] = (uint8_t)(size>>16);
-		buf[NEXT_OFFSET] = (uint8_t)next;
-		buf[NEXT_OFFSET+1] = (uint8_t)(next>>8);
-		buf[NEXT_OFFSET+2] = (uint8_t)(next>>16);
-
-		ataWrite(mnt->device, file->write.offset-1, 1, buf);
-		file->write.pos = 0;
-		file->write.offset = next+1;
-		buf[SIZE_OFFSET+512] = 1;
-		ataWrite(mnt->device, next, 1, buf+512);
-	}
-
-	ataWrite(mnt->device, file->write.offset+file->write.pos, 1, file->write.buf);
-	file->write.pos++;
+	struct node *node = file->node;
+	struct mount *mnt = node->mnt;
+	ataWrite(mnt->device, file->sector+file->blockAdr, 1, file->buf);
+	if(file->nextBlock == 0 && file->sector+1 == file->blockSize &&
+		node->lastSectorSize > file->offset)
+		node->lastSectorSize = file->offset;
 	
-	if(file->write.bufpos % 512)
-	{
-		ataRead(mnt->device, file->lba, 1, buf);
-		buf[LSIZE_OFFSET] = (uint8_t)file->write.bufpos;
-		buf[LSIZE_OFFSET+1] = (uint8_t)(file->write.bufpos>>8);
-		ataWrite(mnt->device, file->lba, 1, buf);
-		file->lastSize = file->write.bufpos;
-	}
-	
-	ataRead(mnt->device, file->write.offset-1, 1, buf);
-	size = file->write.pos+1;
-	buf[SIZE_OFFSET] = (uint8_t)size;
-	buf[SIZE_OFFSET+1] = (uint8_t)(size>>8);
-	buf[SIZE_OFFSET+2] = (uint8_t)(size>>16);
-	ataWrite(mnt->device, file->write.offset-1, 1, buf);
-	
-	file->write.bufpos = 0;
-	free(buf);
+	file->doFlush = 0;
 }
 
-void fwrite(struct file *file, size_t size, uint8_t *src)
+uint8_t fwrite(struct file *file, size_t size, uint8_t *src)
 {
 	for(uint8_t *end = src+size; src < end; src++)
 	{
-		file->write.buf[file->write.bufpos] = *src;
-		file->write.bufpos++;
-		if(file->write.bufpos == 512)
+		file->buf[file->offset] = *src;
+		file->offset++;
+		file->virtPos++;
+		file->doFlush = 1;
+		
+		if(file->offset >= MY_FS_SECTOR_SIZE)
+		{
 			write(file);
+			
+			if(file->sector+1 >= file->blockSize)
+			{
+				if(file->nextBlock == 0)
+				{
+					if(createOrExtendBlock(file, file->blockAdr+file->sector+1) == MY_EOF)
+						return MY_EOF;
+					
+					if(file->blockSize > 1)
+					{
+						file->sector++;
+						file->offset = 0;
+					}
+				}
+			}
+			else
+			{
+				file->sector++;
+				file->offset = 0;
+			}
+		}
 	}
+	return 0;
 }
 
 void fflush(struct file *file)
 {
-	if(file->write.bufpos)
-		write(file);
+	if(!file->doFlush)
+		return;
+	
+	write(file);
+}
+
+char* getFileName(struct node *node, size_t *size)
+{
+	if(size != NULL)
+		*size = node->nameSize;
+	return node->name;
 }

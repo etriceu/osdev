@@ -8,31 +8,40 @@
 #include "userCall.h"
 #endif
 
-#define EOF 1
+#include "myfsCommon.h"
 
-#define MYFS_READ 0
-#define MYFS_WRITE 1
+/* node table structure
+2B lastSectorSize
+4B firstBlock
+sizeof(size_t) nameSize
+nameSize B name
+*/
+
+/* block structure
+4B blockSize
+4B nextBlock
+*/
 
 struct node
 {
-	uint8_t address[3];
-	void *mntPtr;
+	uint32_t firstBlock;
+	uint16_t lastSectorSize;
+	size_t nameSize;
+	char *name;
+	void *mnt;
 	struct node *next;
-};
-
-struct filerw
-{
-	uint32_t size, offset, pos, next;
-	uint16_t bufpos;
-	uint8_t buf[512];
 };
 
 struct file
 {
-	uint32_t lba;
-	uint16_t lastSize;
-	struct filerw read;
-	struct filerw write;
+	size_t virtPos;
+	uint32_t blockAdr;
+	uint32_t blockSize;
+	uint32_t nextBlock;
+	uint32_t sector;
+	uint16_t offset;
+	uint8_t doFlush;
+	uint8_t buf[MY_FS_SECTOR_SIZE];
 	struct node *node;
 };
 
@@ -56,59 +65,77 @@ struct mount* mount(uint8_t device, uint32_t begin, uint32_t end)
 ;
 void umount(struct mount* mnt)
 #ifndef KERNEL
-{call(10, (uint32_t)mnt, 0, 0, 0);}
+{call(10, (size_t)mnt, 0, 0, 0);}
 #endif
 ;
 
-struct node* newFile(struct mount *mnt, const char *name)
+struct node* newFile(struct mount *mnt, const char *name, const size_t size)
 #ifndef KERNEL
-{return (struct node*)call(11, (uint32_t)mnt, (uint32_t)name, 0, 0);}
+{return (struct node*)call(11, (size_t)mnt, (size_t)name, size, 0);}
 #endif
 ;
-void getFileName(struct node *nod, char *dest)
+char* getFileName(struct node *node, size_t *size)
 #ifndef KERNEL
-{call(12, (uint32_t)nod, (uint32_t)dest, 0, 0);}
+{return (char*)call(12, (size_t)node, (size_t)size, 0, 0);}
 #endif
 ;
 struct node* findFile(struct mount *mnt, const char* name)
 #ifndef KERNEL
-{return (struct node*)call(13, (uint32_t)mnt, (uint32_t)name, 0, 0);}
+{return (struct node*)call(13, (size_t)mnt, (size_t)name, 0, 0);}
 #endif
 ;
-void removeFile(struct node* nod)
+void removeFile(struct node* node)
 #ifndef KERNEL
-{call(14, (uint32_t)nod, 0, 0, 0);}
+{call(14, (size_t)node, 0, 0, 0);}
 #endif
 ;
-void renameFile(struct node* nod, const char *name)
+void renameFile(struct node* node, const char *name, size_t size)
 #ifndef KERNEL
-{call(15, (uint32_t)nod, (uint32_t)name, 0, 0);}
+{call(15, (size_t)node, (size_t)name, size, 0);}
 #endif
 ;
 
-struct file* fopen(struct node* nod, uint64_t *sizeOut, uint8_t mode)
+struct file* fopen(struct node* node)
 #ifndef KERNEL
-{return (struct file*)call(16, (uint32_t)nod, (uint32_t)sizeOut, (uint32_t)mode, 0);}
+{return (struct file*)call(16, (size_t)node, 0, 0, 0);}
 #endif
 ;
 void fclose(struct file *file)
 #ifndef KERNEL
-{call(17, (uint32_t)file, 0, 0, 0);}
+{call(17, (size_t)file, 0, 0, 0);}
 #endif
 ;
 uint8_t fread(struct file *file, size_t size, uint8_t *dest)
 #ifndef KERNEL
-{return call(18, (uint32_t)file, size, (uint32_t)dest, 0);}
+{return call(18, (size_t)file, size, (size_t)dest, 0);}
 #endif
 ;
-void fwrite(struct file *file, size_t size, uint8_t *src)
+uint8_t fwrite(struct file *file, size_t size, uint8_t *src)
 #ifndef KERNEL
-{call(19, (uint32_t)file, size, (uint32_t)src, 0);}
+{return call(19, (size_t)file, size, (size_t)src, 0);}
 #endif
 ;
 void fflush(struct file *file)
 #ifndef KERNEL
-{call(20, (uint32_t)file, 0, 0, 0);}
+{call(20, (size_t)file, 0, 0, 0);}
+#endif
+;
+
+uint8_t fseek(struct file* file, size_t pos)
+#ifndef KERNEL
+{return call(36, (size_t)file, pos, 0, 0);}
+#endif
+;
+
+size_t ftell(struct file* file)
+#ifndef KERNEL
+{return call(37, (size_t)file, 0, 0, 0);}
+#endif
+;
+
+void ftrim(struct file* file)
+#ifndef KERNEL
+{call(38, (size_t)file, 0, 0, 0);}
 #endif
 ;
 

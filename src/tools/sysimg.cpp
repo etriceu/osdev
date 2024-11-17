@@ -2,9 +2,28 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
-#include <cmath>
+#include <cstdint>
+
+#include "../include/myfsCommon.h"
 
 using namespace std;
+
+typedef uint32_t osSize_t;
+
+constexpr int SECTOR_SIZE = MY_FS_SECTOR_SIZE;
+constexpr int BOOTSECTOR_SIZE = SECTOR_SIZE*2;
+
+constexpr uint8_t KERNEL_SECTOR = 3;
+constexpr uint8_t KERNEL_CYLINDER = 0;
+constexpr uint8_t KERNEL_HEAD = 0;
+
+constexpr int INFO_SECTOR_SIZE = 4*sizeof(uint8_t)+2*sizeof(uint32_t);
+
+struct FileInfo
+{
+	string fileName;
+	size_t fileSize;
+};
 
 void writeZero(fstream &f, int size)
 {
@@ -12,14 +31,32 @@ void writeZero(fstream &f, int size)
 		f.put(0);
 }
 
+void calcBlockInfo(uint32_t &blockSize, uint16_t &lastSectorSize)
+{
+	if(blockSize <= SECTOR_SIZE-MY_FS_BLOCK_HEADER_SIZE)
+	{
+		lastSectorSize = blockSize;
+		blockSize = 1;
+	}
+	else
+	{
+		blockSize -= SECTOR_SIZE-MY_FS_BLOCK_HEADER_SIZE;
+		lastSectorSize = blockSize%SECTOR_SIZE;
+		blockSize /= SECTOR_SIZE;
+		blockSize++;
+		if(lastSectorSize != 0)
+			blockSize++;
+	}
+}
+
 int main(int argc, char** argv)
 {
 	if(argc <= 2 || !strcmp(argv[0], "-h") || !strcmp(argv[0], "--help"))
 	{
-		printf("Usage: %s [KERNEL] [OUTPUT] [FREE_SPACE] [FILES]...\n", argv[0]);
+		printf("Usage: %s [KERNEL] [OUTPUT] [DISK_SIZE] [FILES]...\n", argv[0]);
 		printf("KERNEL - path to kernel.bin file\n");
 		printf("OUTPUT - output file\n");
-		printf("FREE_SPACE - number of free sectors at the end\n");
+		printf("DISK_SIZE - number of sectors\n");
 		printf("FILES - additional files\n");
 		return 0;
 	}
@@ -40,90 +77,106 @@ int main(int argc, char** argv)
 		printf("Unable to open \"%s\" file.\n", argv[2]);
 		return 1;
 	}
-
-	vector <int> nodes;
-	size_t n = 0, size = 3;
-	char buf[512];
 	
-	//add kernel
-	nodes.push_back(1);
-	int gg = 0;
-	for(; !file.eof(); n++)
-	{
-		file.read(buf, 512);
-		if(n == 1)
-			size = buf[0]-1; //size offset
-		
+	uint32_t diskSize = atoi(argv[3]);
+	
+	file.seekg(0, file.end);
+	size_t kernelSize = (size_t)file.tellg()-BOOTSECTOR_SIZE;
+	file.seekg(0, file.beg);
+	
+	char buf[SECTOR_SIZE];
+	
+	//write bootsector
+	file.read(buf, SECTOR_SIZE);
+	result.write(buf, SECTOR_SIZE);
+	
+	//write kernel info & first partition info
+	uint8_t sizeInSectors = kernelSize/SECTOR_SIZE + (kernelSize%SECTOR_SIZE ? 1 : 0);
+	printf("Kernel size: %d sectors\n", sizeInSectors);
+	result.write((const char*)&sizeInSectors, sizeof(sizeInSectors));
+	result.write((const char*)&KERNEL_SECTOR, sizeof(KERNEL_SECTOR));
+	result.write((const char*)&KERNEL_CYLINDER, sizeof(KERNEL_CYLINDER));
+	result.write((const char*)&KERNEL_HEAD, sizeof(KERNEL_HEAD));
+	
+	uint32_t myfsStart = sizeInSectors+BOOTSECTOR_SIZE/SECTOR_SIZE;
+	uint32_t myfsEnd = diskSize-1;
+	result.write((const char*)&myfsStart, sizeof(myfsStart));
+	result.write((const char*)&myfsEnd, sizeof(myfsEnd));
+	writeZero(result, SECTOR_SIZE-INFO_SECTOR_SIZE);
+	
+	//write kernel
+	file.seekg(BOOTSECTOR_SIZE);
+	do {
+		file.read(buf, SECTOR_SIZE);
 		result.write(buf, file.gcount());
-	}
-	writeZero(result, 512-file.gcount());
-	for(; n < size; n++)
-		writeZero(result, 512);
-	
+	} while(!file.eof());
+	writeZero(result, (SECTOR_SIZE-(result.tellg()%SECTOR_SIZE))%SECTOR_SIZE);
 	file.close();
 	
-	//add files
-	for(int a = 4; a < argc; a++)
+	//load files
+	uint32_t blockSize = MY_FS_NODE_SIZE;
+	uint16_t lastSectorSize = 0;
+	vector<FileInfo> files;
+	for(int n = 4; n < argc; n++)
 	{
-		nodes.push_back(n);
-		file.open(argv[a], ios::in | ios::binary);
-		if(!file.good())
+		file.open(argv[n], ios::in | ios::ate);
+		if(result.good())
 		{
-			printf("Unable to open \"%s\" file.\n", argv[a]);
-			return 1;
+			size_t size = file.tellg();
+			file.close();
+			files.push_back({argv[n], size});
+			blockSize += MY_FS_NODE_SIZE;
+			blockSize += files.back().fileName.size();
 		}
-		file.seekg(0, file.end);
-		size_t fsize = file.tellg();
-		file.seekg(0, file.beg);
-		int s = ceil(fsize/512.0)+1;
-		result.write((const char*)&s, 3);
-		s = 0;
-		result.write((const char*)&s, 3);
-		s = fsize%512;
-		result.write((const char*)&s, 2);
-		s = strlen(argv[a]);
-		result.write(argv[a], s);
-		writeZero(result, 512-3-3-2-s);
+		else
+			printf("Unable to open \"%s\" file.\n", argv[n]);
+	}
+	
+	calcBlockInfo(blockSize, lastSectorSize);
 
-		for(n++; !file.eof(); n++)
-		{
-			file.read(buf, 512);
+	//write node table
+	uint32_t firstBlock = myfsStart;
+	result.write((const char*)&blockSize, sizeof(blockSize));
+	writeZero(result, sizeof(uint32_t));
+	result.write((const char*)&lastSectorSize, sizeof(lastSectorSize));
+	result.write((const char*)&firstBlock, sizeof(firstBlock));
+	writeZero(result, sizeof(osSize_t));
+	firstBlock += blockSize;
+	for(FileInfo f : files)
+	{
+		osSize_t nameSize = f.fileName.size();
+		blockSize = f.fileSize;
+		calcBlockInfo(blockSize, lastSectorSize);
+		result.write((const char*)&lastSectorSize, sizeof(lastSectorSize));
+		result.write((const char*)&firstBlock, sizeof(firstBlock));
+		result.write((const char*)&nameSize, sizeof(nameSize));
+		result.write(f.fileName.c_str(), nameSize);
+		firstBlock += blockSize;
+	}
+	writeZero(result, (SECTOR_SIZE-(result.tellg()%SECTOR_SIZE))%SECTOR_SIZE);
+	
+	//write files
+	for(FileInfo f : files)
+	{
+		file.open(f.fileName, ios::in | ios::binary);
+		blockSize = f.fileSize;
+		calcBlockInfo(blockSize, lastSectorSize);
+		result.write((const char*)&blockSize, sizeof(blockSize));
+		writeZero(result, sizeof(uint32_t));
+		do {
+			file.read(buf, SECTOR_SIZE);
 			result.write(buf, file.gcount());
-		}
-		writeZero(result, 512-file.gcount());
+		} while(!file.eof());
+		writeZero(result, (SECTOR_SIZE-(result.tellg()%SECTOR_SIZE))%SECTOR_SIZE);
 		file.close();
 	}
 	
-	//add free space
-	for(int n = 0; n < atoi(argv[3]); n++)
-		writeZero(result, 512);
+	//resize disk
+	if(result.tellg()/SECTOR_SIZE < diskSize)
+		writeZero(result, (diskSize-result.tellg()/SECTOR_SIZE)*SECTOR_SIZE);
+	else
+		printf("Warning: disk size is too small\n");
 	
-	//add nodes
-	writeZero(result, 512);
-	size = 0;
-	for(int n : nodes)
-	{
-		result.write((const char*)&n, 3);
-		size += 3;
-		if(size == 510)
-		{
-			writeZero(result, 2);
-			size = 0;
-		}
-	}
-	if(size == 510)
-		size += 2;
-	
-	writeZero(result, 512-size);
-	
-	//save the end of myfs
-	result.flush();
-	fstream tmp;
-	tmp.open(argv[2], ios::in | ios::ate);
-	size_t fsize = tmp.tellg()/512-1;
-	tmp.close();
-	result.seekp(file.beg+512+509);
-	result.write((const char*)&fsize, 3);
 	result.close();
 	
 	return 0;
