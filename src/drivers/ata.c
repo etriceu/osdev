@@ -50,6 +50,28 @@ void ataWrite(uint8_t device, uint32_t lba, uint8_t n, uint8_t *src)
 	}
 }
 
+void ataFill(uint8_t device, uint32_t lba, uint8_t size, uint16_t value)
+{
+	uint16_t bus = buses[device];
+	while(in(bus+7) & 0x80);
+		
+	out(bus+1, 0x00);
+	out(bus+2, size);
+	out(bus+3, (uint8_t)lba);
+	out(bus+4, (uint8_t)(lba >> 8));
+	out(bus+5, (uint8_t)(lba >> 16));
+	out(bus+6, ((lba>>24) & 0x0f) | disks[device]);
+	out(bus+7, 0x30);
+
+	for(int a = 0; a < size; a++)
+	{
+		while(in(bus+7) & 0x80);
+		
+		for(int n = 0; n < 256; n++)
+			out2(bus, value);
+	}
+}
+
 uint32_t ataGetSize(uint8_t device)
 {
 	if(diskSize[device] != -1)
