@@ -6,17 +6,26 @@
 
 #ifndef KERNEL
 #include "userCall.h"
+#define _PREFIX static inline
+#else
+#define _PREFIX
 #endif
 
 #ifdef KERNEL
 void memInit();
 #endif
-void* malloc(size_t size)
+
+_PREFIX void* malloc(size_t size)
 #ifndef KERNEL
 {return (uint8_t*)call(6, size, 0, 0, 0);}
 #endif
 ;
-void free(void *ptr)
+_PREFIX void* realloc(void *ptr, size_t size)
+#ifndef KERNEL
+{return (uint8_t*)call(33, (uint32_t)ptr, size, 0, 0);}
+#endif
+;
+_PREFIX void free(void *ptr)
 #ifndef KERNEL
 {call(7, (uint32_t)ptr, 0, 0, 0);}
 #endif
