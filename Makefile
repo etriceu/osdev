@@ -6,7 +6,7 @@ LDARG = -melf_i386
 
 objects = src/boot.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdt.o src/cpu/gdtFlush.o src/cpu/idt.o src/cpu/isr.o src/cpu/interrupts.o src/system/systemCall.o src/system/exec.o src/cpu/irq.o src/cpu/timer.o
 
-userSoftware = editor shell
+userSoftware = editor shell ls newfile clear rm rename
 
 %.o: %.c
 	gcc $(GCCARG) -o $@ -c $<
@@ -22,7 +22,22 @@ sysimg:
 	
 editor:
 	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
-	
+
+ls:
+	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
+
+rm:
+	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
+
+newfile:
+	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
+
+clear:
+	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
+
+rename:
+	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
+
 shell:
 	gcc $(GCCARG_USER) src/userSoftware/shell/*.c -o $@
 	

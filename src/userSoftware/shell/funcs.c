@@ -107,7 +107,7 @@ void _nop(char** code, const char* end, const char* start)
 			}
 		}
 		setStyle(style);
-		*code = end;
+		*code = (char*)end;
 	}
 }
 

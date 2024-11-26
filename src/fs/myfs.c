@@ -197,7 +197,7 @@ void ftrim(struct file *file)
 	file->doFlush = 0;
 }
 
-void umount(struct mount *mnt)
+void saveNodes(struct mount *mnt)
 {
 	struct node superNode;
 	loadSuperNode(mnt, &superNode);
@@ -208,18 +208,12 @@ void umount(struct mount *mnt)
 	fwrite(nodeTable, 4, (uint8_t*)&superNode.nameSize);
 	fwrite(nodeTable, superNode.nameSize, (uint8_t*)superNode.name);
 	
-	for(struct node *node = mnt->nodes; node != NULL;)
+	for(struct node *node = mnt->nodes; node != NULL; node = node->next)
 	{
 		fwrite(nodeTable, 2, (uint8_t*)&node->lastSectorSize);
 		fwrite(nodeTable, 4, (uint8_t*)&node->firstBlock);
 		fwrite(nodeTable, 4, (uint8_t*)&node->nameSize);
 		fwrite(nodeTable, node->nameSize, (uint8_t*)node->name);
-		
-		void *ptr = node;
-		if(node->name != NULL)
-			free(node->name);
-		node = node->next;
-		free(ptr);
 	}
 	
 	ftrim(nodeTable);
@@ -228,6 +222,20 @@ void umount(struct mount *mnt)
 	fwrite(nodeTable, 2, (uint8_t*)&superNode.lastSectorSize);
 
 	fclose(nodeTable);
+}
+
+void umount(struct mount *mnt)
+{
+	saveNodes(mnt);
+	
+	for(struct node *node = mnt->nodes; node != NULL;)
+	{
+		void *ptr = node;
+		if(node->name != NULL)
+			free(node->name);
+		node = node->next;
+		free(ptr);
+	}
 	
 	if(mountPoints == mnt)
 		mountPoints = mnt->next;

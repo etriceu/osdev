@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 	if(argc != 2)
 	{
 		print(argv[0]);
-		print(" [filename]\n");
+		print(" filename\n");
 		return 1;
 	}
 
@@ -240,9 +240,11 @@ int main(int argc, char** argv)
 		if(refresh)
 		{
 			clear();
+			setStyle(FG_GREEN);
 			print(argv[1]);
 			print("; "); printNum(row); print("; "); printNum(col);
 			print("; Ctrl + s to save; Ctrl + x to exit;\n");
+			setStyle(FG_GREY);
 			for(uint32_t n = offset; n < num && n < offset+VIDEO_HEIGHT-2; n++)
 				printn(lines[n], VIDEO_WIDTH);
 			

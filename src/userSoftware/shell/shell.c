@@ -41,16 +41,18 @@ void parseStrings(char **code, size_t *size, char ***strings, size_t *strCount)
 	size_t newSize = 0;
 	char *newCode = NULL;
 	
-	size_t strSize;
+	size_t strSize = 0;
 	char *string = NULL;
 	for(size_t n = 0; n < *size; n++)
 	{
 		if((*code)[n] == '"')
 		{
 			isQuota = !isQuota;
-			strSize = 0;
+			
 			if(!isQuota)
 			{
+				string = realloc(string, strSize+1);
+				string[strSize++] = '\0';
 				(*strCount)++;
 				*strings = (char**)realloc(*strings, (*strCount)*sizeof(char*));
 				(*strings)[(*strCount)-1] = string;
@@ -63,6 +65,8 @@ void parseStrings(char **code, size_t *size, char ***strings, size_t *strCount)
 				}
 				string = NULL;
 			}
+			
+			strSize = 0;
 		}
 		else if((*code)[n] == '\\' && isQuota && ++n < *size)
 		{

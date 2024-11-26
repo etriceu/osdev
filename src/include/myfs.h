@@ -142,4 +142,10 @@ _PREFIX void ftrim(struct file* file)
 #endif
 ;
 
+_PREFIX void saveNodes(struct mount *mnt)
+#ifndef KERNEL
+{call(41, (size_t)mnt, 0, 0, 0);}
+#endif
+;
+
 #endif // MYFS_H_INCLUDED
