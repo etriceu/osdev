@@ -1,6 +1,9 @@
 # operating-system
 Simple operating system for x86 architecture.
-![image](https://user-images.githubusercontent.com/58367136/164913133-8c02a5c2-ef96-48d9-8d66-380f0dce9ea4.png)
+![image](https://github.com/user-attachments/assets/697a1010-96dc-4cc4-ab25-a9b227b9a521)
+![image](https://github.com/user-attachments/assets/a2f59f7b-cfc7-4e5f-913a-f619ca6eabf0)
+
+
 
 # Supports
 * Video: 80x25 color text mode
@@ -15,6 +18,7 @@ Simple operating system for x86 architecture.
 * ELF exec
 * System calls
 * User software
+* Shell with an assembler-like language
 
 # Build & run
 ```
@@ -26,7 +30,7 @@ qemu-system-x86_64 -hda myos.img -m 1024
 
 #.img
 #./sysimg -h #manual
-./sysimg myos.bin myos.img 10 #[additional files/programs]
+./sysimg myos.bin myos.img 1000 #[additional files/programs]
 
 #.iso (only bootable kernel)
 mkdir iso
