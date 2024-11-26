@@ -1,8 +1,7 @@
 # operating-system
 Simple operating system for x86 architecture.
-![image](https://github.com/user-attachments/assets/697a1010-96dc-4cc4-ab25-a9b227b9a521)
-![image](https://github.com/user-attachments/assets/a2f59f7b-cfc7-4e5f-913a-f619ca6eabf0)
-
+![image](https://github.com/user-attachments/assets/2aa6b6d1-652f-4309-a44a-5e3c8c5996da)
+![image](https://github.com/user-attachments/assets/57376a2a-f21c-4edb-b2f1-73682d1f90b9)
 
 
 # Supports
