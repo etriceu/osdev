@@ -6,7 +6,7 @@ LDARG = -melf_i386
 
 objects = src/boot.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdt.o src/cpu/gdtFlush.o src/cpu/idt.o src/cpu/isr.o src/cpu/interrupts.o src/system/systemCall.o src/system/exec.o src/cpu/irq.o src/cpu/timer.o
 
-userSoftware = helloworld editor shell
+userSoftware = editor shell
 
 %.o: %.c
 	gcc $(GCCARG) -o $@ -c $<
@@ -19,9 +19,6 @@ myos.bin: $(objects)
 
 sysimg:
 	g++ -O3 src/tools/sysimg.cpp -o sysimg
-
-helloworld:
-	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
 	
 editor:
 	gcc $(GCCARG_USER) src/userSoftware/$@.c -o $@
@@ -32,7 +29,7 @@ shell:
 userSoft: $(userObj) $(userSoftware)
 
 myos.img: myos.bin sysimg userSoft
-	./sysimg myos.bin myos.img 1000 init $(userSoftware)
+	./sysimg myos.bin myos.img 1000 init helloworld.sh $(userSoftware)
 	
 all: myos.img
 
