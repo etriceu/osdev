@@ -151,7 +151,7 @@ void execute(char *code, size_t size)
 			for(; code < end && *code != EOL; code++);
 			continue;
 		}
-		else if(*code <= ' ' || *code > '~')
+		else if(*code <= ' ' || *code > '~' || *code == EOL)
 			continue;
 		else
 		{
@@ -193,6 +193,7 @@ int main(int argc, char **argv)
 				parseStrings(&code, &size, &strings, &strCount);
 				parseArgs(&code, &size, argc-1, argv+1);
 				execute(code, size);
+				free(code);
 			}
 			else
 			{
@@ -203,6 +204,8 @@ int main(int argc, char **argv)
 		}
 		else
 			print("No mount points.\n");
+		
+		return 0;
 	}
 	
 	if(!isScriptFile)
@@ -239,6 +242,8 @@ int main(int argc, char **argv)
 						char *code = malloc(size);
 						for(size_t n = 0; n < size; n++)
 							code[n] = line[n];
+						
+						code[size-1] = EOL;
 						
 						parseStrings(&code, &size, &strings, &strCount);
 						execute(code, size);

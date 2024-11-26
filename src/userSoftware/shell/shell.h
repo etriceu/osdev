@@ -1,7 +1,7 @@
 #ifndef SHELL_H
 #define SHELL_H
 
-#define EOL '\0'
+#define EOL ';'
 
 struct KeyUpMap
 {
