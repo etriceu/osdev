@@ -6,6 +6,9 @@
 
 #ifndef KERNEL
 #include "userCall.h"
+#define _PREFIX static inline
+#else
+#define _PREFIX
 #endif
 
 #define FG_BLACK			0x0000
@@ -39,63 +42,63 @@
 #define VIDEO_WIDTH 80
 #define VIDEO_HEIGHT 25
 
-void setStyle(uint16_t s)
+_PREFIX void setStyle(uint16_t s)
 #ifndef KERNEL
 {call(21, s, 0, 0, 0);}
 #endif
 ;
-uint16_t getStyle()
+_PREFIX uint16_t getStyle()
 #ifndef KERNEL
 {return call(22, 0, 0, 0, 0);}
 #endif
 ;
-int8_t isCursor()
+_PREFIX int8_t isCursor()
 #ifndef KERNEL
 {return call(23, 0, 0, 0, 0);}
 #endif
 ;
-void disableCursor()
+_PREFIX void disableCursor()
 #ifndef KERNEL
 {call(24, 0, 0, 0, 0);}
 #endif
 ;
-void enableCursor(uint8_t start, uint8_t end)
+_PREFIX void enableCursor(uint8_t start, uint8_t end)
 #ifndef KERNEL
 {call(25, start, end, 0, 0);}
 #endif
 ;
-void moveCursor(int pos)
+_PREFIX void moveCursor(int pos)
 #ifndef KERNEL
 {call(26, pos, 0, 0, 0);}
 #endif
 ;
-int getCursorPos()
+_PREFIX int getCursorPos()
 #ifndef KERNEL
 {return call(27, 0, 0, 0, 0);}
 #endif
 ;
 
-void clear()
+_PREFIX void clear()
 #ifndef KERNEL
 {call(28, 0, 0, 0, 0);}
 #endif
 ;
-void print(const char *str)
+_PREFIX void print(const char *str)
 #ifndef KERNEL
 {call(29, (uint32_t)str, 0, 0, 0);}
 #endif
 ;
-void printn(const char *str, size_t size)
+_PREFIX void printn(const char *str, size_t size)
 #ifndef KERNEL
 {call(30, (uint32_t)str, size, 0, 0);}
 #endif
 ;
-void printRaw(const uint16_t *str, size_t size)
+_PREFIX void printRaw(const uint16_t *str, size_t size)
 #ifndef KERNEL
 {call(31, (uint32_t)str, size, 0, 0);}
 #endif
 ;
-void setChar(int pos, char c, uint16_t s)
+_PREFIX void setChar(int pos, char c, uint16_t s)
 #ifndef KERNEL
 {call(32, pos, c, s, 0);}
 #endif

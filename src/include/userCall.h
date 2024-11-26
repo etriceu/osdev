@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-uint32_t call(uint32_t id, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+static uint32_t call(uint32_t id, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
 {
 	uint32_t ret = 0;
 	uint32_t args[] = {id, (uint32_t)&ret, a, b, c, d};

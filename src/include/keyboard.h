@@ -4,6 +4,9 @@
 #include <stdint.h>
 #ifndef KERNEL
 #include "userCall.h"
+#define _PREFIX static inline
+#else
+#define _PREFIX
 #endif
 
 // US QWERTY
@@ -43,20 +46,21 @@ struct {
 uint8_t isKeyEvent();
 uint8_t getKey();
 void keyboard();
+void translateKeyCodes();
 #endif
 
-int8_t getKeyStatus(uint8_t key)
+_PREFIX int8_t getKeyStatus(uint8_t key)
 #ifndef KERNEL
 {return call(5, key, 0, 0, 0);}
 #endif
 ;
-uint8_t pollKeys()
+_PREFIX uint8_t pollKeys()
 #ifndef KERNEL
 {return call(3, 0, 0, 0, 0);}
 #endif
 ;
-void translateKeyCodes();
-uint8_t keyID(uint8_t key)
+
+_PREFIX uint8_t keyID(uint8_t key)
 #ifndef KERNEL
 {return call(4, key, 0, 0, 0);}
 #endif

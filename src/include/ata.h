@@ -5,6 +5,9 @@
 
 #ifndef KERNEL
 #include "userCall.h"
+#define _PREFIX static inline
+#else
+#define _PREFIX
 #endif
 
 #define PRIMARY_MASTER 0b000
@@ -20,7 +23,7 @@
  * @param N The number of sectors to read.
  * @param dest Pointer to the array where the read sectors are stored.
  */
-void ataRead(uint8_t device, uint32_t lba, uint8_t n, uint8_t *dest)
+_PREFIX void ataRead(uint8_t device, uint32_t lba, uint8_t n, uint8_t *dest)
 #ifndef KERNEL
 {call(0, device, lba, n, (uint32_t)dest);}
 #endif
@@ -34,7 +37,7 @@ void ataRead(uint8_t device, uint32_t lba, uint8_t n, uint8_t *dest)
  * @param N The number of sectors to write.
  * @param src Pointer to the array containing the sectors to be written.
  */
-void ataWrite(uint8_t device, uint32_t lba, uint8_t n, uint8_t *src)
+_PREFIX void ataWrite(uint8_t device, uint32_t lba, uint8_t n, uint8_t *src)
 #ifndef KERNEL
 {call(1, device, lba, n, (uint32_t)src);}
 #endif
@@ -46,7 +49,7 @@ void ataWrite(uint8_t device, uint32_t lba, uint8_t n, uint8_t *src)
  * @param device The hard disk identifier.
  * @return The number of sectors.
  */
-uint32_t ataGetSize(uint8_t device)
+_PREFIX uint32_t ataGetSize(uint8_t device)
 #ifndef KERNEL
 {return call(2, device, 0, 0, 0);}
 #endif
@@ -60,9 +63,9 @@ uint32_t ataGetSize(uint8_t device)
  * @param size The number of sectors to write.
  * @param value Filling value.
  */
-void ataFill(uint8_t device, uint32_t lba, uint8_t size, uint16_t value)
+_PREFIX void ataFill(uint8_t device, uint32_t lba, uint8_t size, uint16_t value)
 #ifndef KERNEL
-{call(1, device, lba, size, value);}
+{call(39, device, lba, size, value);}
 #endif
 ;
 

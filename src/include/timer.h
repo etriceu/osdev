@@ -5,6 +5,9 @@
 
 #ifndef KERNEL
 #include "userCall.h"
+#define _PREFIX static inline
+#else
+#define _PREFIX
 #endif
 
 #define TIMER_FREQ 200
@@ -14,12 +17,12 @@ void timerInit();
 void timer();
 #endif
 
-uint32_t getTicks()
+_PREFIX uint32_t getTicks()
 #ifndef KERNEL
 {return call(34, 0, 0, 0, 0);}
 #endif
 ;
-void sleep(uint32_t ms)
+_PREFIX void sleep(uint32_t ms)
 #ifndef KERNEL
 {call(35, ms, 0, 0, 0);}
 #endif
