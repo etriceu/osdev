@@ -1,5 +1,4 @@
 #include "include/keyboard.h"
-#include "include/system.h"
 #include "include/malloc.h"
 #include "include/myfs.h"
 #include "include/gdt.h"
@@ -45,7 +44,7 @@ extern void kernelMain()
 			size_t size = ftell(file);
 			fseek(file, 0);
 			char *name = malloc(size+1);
-			fread(file, size, name);
+			fread(file, size, (uint8_t*)name);
 			fclose(file);
 			
 			//rtrim
@@ -80,48 +79,6 @@ extern void kernelMain()
 	}
 	else
 		print("Partition not found.\n");
-
-	char cmd[VIDEO_WIDTH];
-	int cmdi = 0;
-
-	while(1)
-	{
-		for(uint8_t key = pollKeys(); key != KEY_NONE; key = pollKeys())
-		{
-			if(key < KEY_SPECIAL)
-				key = KEYS[key];
-
-			if(key == KEY_ENTER)
-			{
-				print("\n");
-				cmd[cmdi] = '\0';
-				cmdi = 0;
-				system(cmd);
-			}
-			else if(key == KEY_BACKSPACE && cmdi > 0)
-			{
-				cmdi--;
-				moveCursor(getCursorPos()-1);
-				setChar(getCursorPos(), 0, getStyle());
-				cmd[cmdi] = 0;
-			}
-			else if(key <= '~')
-			{
-				if((getKeyStatus(keyID(KEY_LSHIFT)) ||
-					getKeyStatus(keyID(KEY_RSHIFT))) &&
-					key >= 'a' && key <= 'z')
-					key -= 32;
-				
-				if(cmdi < VIDEO_WIDTH)
-				{
-					printn((const char*)&key, 1);
-					cmd[cmdi] = key;
-					cmdi++;
-				}
-			}
-		}
-		sleep(10);
-	}
 
 	asm volatile("hlt");
 }
