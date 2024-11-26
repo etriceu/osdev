@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifndef KERNEL
+#include "userCall.h"
+#define _PREFIX static inline
+#else
+#define _PREFIX
+#endif
+
 #define EI_CALSS 4
 #define EI_DATA 5
 #define EI_VERSION 6
@@ -18,6 +25,9 @@
 
 #define PT_LOAD 1
 #define PT_DYNAMIC 2
+
+#define SHT_REL 9
+#define SHT_RELA 4
 
 static const uint8_t ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
@@ -51,6 +61,30 @@ struct ElfPhdr
 	uint32_t align;
 };
 
-int elfRun(uint8_t *buf, int argc, char** argv);
+struct ElfShdr
+{
+	uint32_t name;
+	uint32_t type;
+	uint32_t flags;
+	uint32_t addr;
+	uint32_t offset;
+	uint32_t size;
+	uint32_t link;
+	uint32_t info;
+	uint32_t addralign;
+	uint32_t entsize;
+};
+
+struct ElfRel
+{
+	uint32_t offset;
+	uint32_t info;
+};
+
+_PREFIX int elfRun(uint8_t *buf, int argc, char** argv)
+#ifndef KERNEL
+{return call(40, (uint32_t)buf, argc, (uint32_t)argv, 0);}
+#endif
+;
 
 #endif // EXEC_H_INCLUDED

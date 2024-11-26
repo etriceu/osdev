@@ -51,6 +51,19 @@ int elfRun(uint8_t *buf, int argc, char** argv)
 			for(size_t x = 0; x < phdr[n].filesz; x++)
 				proc[x+phdr[n].vaddr] = buf[x+phdr[n].offset];
 	
+	struct ElfShdr *sections = (struct ElfShdr*)(buf+head->shoff);
+	
+	for(int n = 0; n < head->shnum; n++)
+	{
+		struct ElfShdr *shdr = sections+n;
+		if(shdr->type == SHT_REL || shdr->type == SHT_RELA)
+		{
+			struct ElfRel *rel = (struct ElfRel*)(buf+shdr->offset);
+			for(int m = 0; m < shdr->size/sizeof(struct ElfRel); m++)
+				*(uint32_t*)(proc+rel[m].offset) += (uint32_t)proc;
+		}
+	}
+	
 	int (*run)(int, char**) = (int (*)(int, char**))(proc+head->entry);
 	int ret = (*run)(argc, argv);
 	free(proc);
