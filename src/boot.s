@@ -45,16 +45,15 @@ halt:
 	
 .p2align 2
 gdt:
+	#first always empty
 	.word 0, 0
 	.byte 0, 0, 0, 0
+	#from 0 to 4GB, code, full access
 	.word 0xffff, 0
-	.byte 0, 0x9a, 0xcf, 0
+	.byte 0, 0x9f, 0xcf, 0
+	#from 0 to 4GB, data, full access
 	.word 0xffff, 0
-	.byte 0, 0x92, 0xcf, 0
-	.word 0xffff, 0
-	.byte 0, 0x9e, 0, 0
-	.word 0xffff, 0
-	.byte 0, 0x92, 0, 0
+	.byte 0, 0x93, 0xcf, 0
 	
 gdtReg:
 	.word 0x27
