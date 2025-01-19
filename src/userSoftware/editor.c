@@ -111,7 +111,7 @@ int main(int argc, char** argv)
 	newLine(&lines, &num, 0);
 
 	for(uint32_t a = 0, b = 0, c = 0; a < size; a++, c++)
-		if(c >= VIDEO_WIDTH-1 || buf[a] == '\n')
+		if(c >= VIDEO_WIDTH-1 || buf[a] == '\n' || buf[a] == '\0')
 		{
 			c = -1;
 			b++;
