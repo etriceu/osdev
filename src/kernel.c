@@ -1,7 +1,6 @@
 #include "include/keyboard.h"
 #include "include/malloc.h"
 #include "include/myfs.h"
-#include "include/gdt.h"
 #include "include/idt.h"
 #include "include/systemCall.h"
 #include "include/irq.h"
@@ -11,7 +10,6 @@
 extern void kernelMain()
 {
 	memInit();
-	gdtInit();
 	idtInit();
 	irqInit();
 	timerInit();

@@ -1,3 +1,8 @@
+/*
+ * Currently, the GDT is set in the bootloader (boot.s), and this code is not used.
+ * I kept it in case someone needs it.
+ */
+
 #include "../include/gdt.h"
 
 GDT gdt[3];

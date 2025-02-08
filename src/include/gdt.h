@@ -1,3 +1,9 @@
+/*
+ * Currently, the GDT is set in the bootloader (boot.s), and this code is not used.
+ * I kept it in case someone needs it.
+ */
+
+
 #ifndef GDT_H
 #define GDT_H
 

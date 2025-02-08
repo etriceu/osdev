@@ -4,7 +4,7 @@ GCCARG_USER = -m32 -nostdlib -nostartfiles -fno-builtin -fno-stack-protector -fl
 ASMARG = --32 -nostdlib
 LDARG = -melf_i386
 
-objects = src/boot.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdt.o src/cpu/gdtFlush.o src/cpu/idt.o src/cpu/isr.o src/cpu/interrupts.o src/system/systemCall.o src/system/exec.o src/cpu/irq.o src/cpu/timer.o
+objects = src/boot.o src/kernel.o src/drivers/screen.o src/drivers/keyboard.o src/drivers/ata.o src/system/malloc.o src/fs/myfs.o src/cpu/gdtFlush.o src/cpu/idt.o src/cpu/isr.o src/cpu/interrupts.o src/system/systemCall.o src/system/exec.o src/cpu/irq.o src/cpu/timer.o
 
 userSoftware = editor shell ls newfile clear rm rename
 
