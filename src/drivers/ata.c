@@ -95,7 +95,7 @@ uint32_t ataGetSize(uint8_t device)
 		for(int n = 0; n < 256; n++)
 			buf[n] = in2(bus);
 		
-		ret = *(uint32_t*)&buf[60];
+		ret = *(uint32_t*)&buf[100];
 	}
 	free(buf);
 	diskSize[device] = ret-1;
