@@ -10,10 +10,13 @@
 #define _PREFIX
 #endif
 
-#define PRIMARY_MASTER 0b000
-#define PRIMARY_SLAVE 0b001
-#define SECONDARY_MASTER 0b010
-#define SECONDARY_SLAVE 0b100
+enum
+{
+	PRIMARY_MASTER,
+	PRIMARY_SLAVE,
+	SECONDARY_MASTER,
+	SECONDARY_SLAVE
+};
 
 /**
  * Reads N sectors from the specified address on the hard disk to the destination.
