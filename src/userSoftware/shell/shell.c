@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 	char **strings = NULL;
 	
 	uint8_t isScriptFile = 0;
-	if(argc == 2)
+	if(argc >= 2)
 	{
 		struct mount *mnt = getMountPoints();
 		if(mnt)
