@@ -434,8 +434,9 @@ void write(struct file *file)
 	struct mount *mnt = node->mnt;
 	ataWrite(mnt->device, file->sector+file->blockAdr, 1, file->buf);
 	if(file->nextBlock == 0 && file->sector+1 == file->blockSize &&
-		node->lastSectorSize > file->offset)
-		node->lastSectorSize = file->offset;
+		node->lastSectorSize != file->offset)
+		node->lastSectorSize = file->offset - 
+			(file->sector ? 0 : MY_FS_BLOCK_HEADER_SIZE);
 	
 	file->doFlush = 0;
 }
