@@ -4,7 +4,7 @@
 size_t strlen(char* str)
 {
 	size_t n = 0;
-	for(; *str != '\0' && n < 99999; n++);
+	for(; str[n] != '\0' && n < 99999; n++);
 	return n;
 }
 
