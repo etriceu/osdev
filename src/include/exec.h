@@ -81,6 +81,14 @@ struct ElfRel
 	uint32_t info;
 };
 
+/**
+ * Executes an ELF file from the provided buffer.
+ *
+ * @param buf Pointer to the memory buffer containing the ELF file's binary code.
+ * @param argc The number of arguments.
+ * @param argv Array of arguments to pass to the program.
+ * @return -1 in case of an error, or the return value from the executed program.
+ */
 _PREFIX int elfRun(uint8_t *buf, int argc, char** argv)
 #ifndef KERNEL
 {return call(40, (uint32_t)buf, argc, (uint32_t)argv, 0);}

@@ -49,17 +49,35 @@ void keyboard();
 void translateKeyCodes();
 #endif
 
+/**
+ * Returns the status of a specified keyboard key.
+ *
+ * @param key The identifier of the key to check.
+ * @return `KEY_PRESSED` if the key is pressed, `KEY_RELEASED` if the key is not pressed.
+ */
 _PREFIX int8_t getKeyStatus(uint8_t key)
 #ifndef KERNEL
 {return call(5, key, 0, 0, 0);}
 #endif
 ;
+
+/**
+ * Retrieves the next key from the list of recently pressed keys.
+ *
+ * @return The next key in the list.
+ */
 _PREFIX uint8_t pollKeys()
 #ifndef KERNEL
 {return call(3, 0, 0, 0, 0);}
 #endif
 ;
 
+/**
+ * Converts a key to its corresponding identifier.
+ *
+ * @param key The key to convert.
+ * @return The identifier corresponding to the given key.
+ */
 _PREFIX uint8_t keyID(uint8_t key)
 #ifndef KERNEL
 {return call(4, key, 0, 0, 0);}
